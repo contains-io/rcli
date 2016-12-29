@@ -18,7 +18,7 @@ setup(
     long_description=open('README.md').read(),
     author='Dangle Nuño',
     author_email='dangle@rooph.io',
-    url='https://github.com/dangle/docopt_sub',
+    url='https://github.com/dangle/docopt-sub',
     keywords=['docopt', 'commands', 'subcommands'],
     license='MIT',
     packages=find_packages(exclude=['tests', 'docs']),
