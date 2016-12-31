@@ -7,6 +7,7 @@ import logging
 import os.path
 import re
 import sys
+import types
 
 from docopt import docopt
 import pkg_resources
@@ -30,9 +31,7 @@ See '{command} help <command>' for more information on a specific command.
 """.format(command=_COMMAND)
 
 
-_root_logger = logging.getLogger()
-_root_logger.addHandler(logging.NullHandler())
-_root_logger.setLevel(logging.INFO)
+logging.getLogger().addHandler(logging.NullHandler())
 _logger = logging.getLogger(__name__)
 _subcommands = {}
 
@@ -50,10 +49,10 @@ def main():
     try:
         if args['<command>'] == 'help':
             subcommand = next(iter(args['<args>']), None)
-            _help(subcommand)
+            return _help(subcommand)
         else:
             argv = [args['<command>']] + args['<args>']
-            _run_command(argv)
+            return _run_command(argv)
     except (KeyboardInterrupt, EOFError):
         return "Cancelling at the user's request."
     except Exception as e:
@@ -61,7 +60,7 @@ def main():
         return e
 
 
-def _normalize(cli_args, func):
+def _normalize(func, cli_args):
     """Alter the docopt args to be valid python names for func."""
     def _norm(k):
         """Normalize a single key."""
@@ -73,7 +72,10 @@ def _normalize(cli_args, func):
             k = k[1:-1]
         return k.lower().replace('-', '_')
 
-    params = inspect.getargspec(func)[0]
+    if isinstance(func, types.FunctionType) or not hasattr(func, '__call__'):
+        params = inspect.getargspec(func)[0]
+    else:
+        params = inspect.getargspec(func.__call__)[0][1:]
     args = {}
     for k, v in cli_args.items():
         nk = _norm(k)
@@ -102,24 +104,48 @@ def _get_subcommands():
     regex = re.compile(r'{}:(?P<name>[^:]+)$'.format(_COMMAND))
     subcommands = {}
     for ep in pkg_resources.iter_entry_points(group='docopt_sub'):
-        if ep.name == _COMMAND:
-            subcommands[None] = ep
-        else:
-            match = re.match(regex, ep.name)
-            if match:
-                subcommands[match.group('name')] = ep.load()
+        try:
+            if ep.name == _COMMAND:
+                subcommands[None] = ep.load()
+            else:
+                match = re.match(regex, ep.name)
+                if match:
+                    subcommands[match.group('name')] = ep.load()
+        except ImportError as e:
+            _logger.exception('Unable to load command. Skipping.', e)
     return subcommands
 
 
-def _get_subcommand(subcommand):
+def _get_subcommand(name):
     """Return the function for the specified subcommand."""
-    if subcommand not in _subcommands:
+    _logger.debug('Accessing subcommand "%s".', name)
+    if name not in _subcommands:
         raise ValueError(
             '"{subcommand}" is not a {command} command. \'{command} help -a\' '
             'lists all available subcommands.'.format(
-                command=_COMMAND, subcommand=subcommand)
+                command=_COMMAND, subcommand=name)
         )
-    return _subcommands[subcommand]
+    return _subcommands[name]
+
+
+def _get_callable(subcommand, args):
+    """Return a callable object from the subcommand."""
+    _logger.debug(
+        'Creating callable from subcommand "%s" with command line arguments: '
+        '%s', subcommand.__name__, args)
+    if isinstance(subcommand, types.ModuleType):
+        _logger.debug('Subcommand is a module.')
+        assert hasattr(subcommand, 'Command'), (
+            'Module subcommand must have callable "Command" class definition.')
+        subcommand = subcommand.Command
+    if (isinstance(subcommand, types.ClassType) or
+            isinstance(subcommand, types.TypeType)):
+        try:
+            return subcommand(**args)
+        except TypeError:
+            _logger.debug('Subcommand does not take arguments.')
+            return subcommand()
+    return subcommand
 
 
 def _run_command(argv):
@@ -145,12 +171,13 @@ def _run_command(argv):
     _logger.debug('Parsing docstring:%s\nwith arguments %s.',
                   subcommand.__doc__, argv)
     args = docopt(subcommand.__doc__, argv=argv)
-    if hasattr(subcommand, 'validate'):
-        _logger.debug('Validating command arguments with "%s".',
-                      subcommand.validate)
-        args.update(subcommand.validate(args))
-    normalized_args = _normalize(args, subcommand)
-    return subcommand(**normalized_args) or 0
+    call = _get_callable(subcommand, args)
+    if hasattr(call, 'schema') and not hasattr(call, 'validate'):
+        call.validate = call.schema.validate
+    if hasattr(call, 'validate'):
+        _logger.debug('Validating command arguments with "%s".', call.validate)
+        args.update(call.validate(args))
+    return call(**_normalize(call, args)) or 0
 
 
 def _help(command):
