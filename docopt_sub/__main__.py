@@ -55,9 +55,9 @@ def main():
             return _run_command(argv)
     except (KeyboardInterrupt, EOFError):
         return "Cancelling at the user's request."
-    except Exception as e:
-        _logger.exception(e)
-        return e
+    except:
+        _logger.exception('An unexpected error has occurred.')
+        raise
 
 
 def _normalize(func, cli_args):
@@ -111,8 +111,8 @@ def _get_subcommands():
                 match = re.match(regex, ep.name)
                 if match:
                     subcommands[match.group('name')] = ep.load()
-        except ImportError as e:
-            _logger.exception('Unable to load command. Skipping.', e)
+        except ImportError:
+            _logger.exception('Unable to load command. Skipping.')
     return subcommands
 
 
