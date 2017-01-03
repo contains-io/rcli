@@ -2,14 +2,14 @@ from setuptools import setup
 
 setup(
     name='explicit_example',
-    version='0.0.1',
+    version='1.0.0',
     packages=['explicit_example'],
-    install_requires=['docopt_sub'],
+    install_requires=['rapcom'],
     entry_points={
         'console_scripts': [
-            'say = docopt_sub.__main__:main'
+            'say = rapcom.__main__:main'
         ],
-        'docopt_sub': [
+        'rapcom': [
             'say:hello = explicit_example:hello',
             'say:hiya = explicit_example:hiya'
         ]

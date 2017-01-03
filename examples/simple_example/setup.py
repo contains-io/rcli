@@ -2,9 +2,9 @@ from setuptools import setup
 
 setup(
     name='simple_example',
-    version='0.0.1',
+    version='1.0.0',
     packages=['simple_example'],
-    install_requires=['docopt_sub'],
-    setup_requires=['docopt_sub'],
-    commands=['say']
+    install_requires=['rapcom'],
+    setup_requires=['rapcom'],
+    autodetect_commands=True
 )
