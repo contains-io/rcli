@@ -7,6 +7,7 @@ import logging
 import os.path
 import re
 import sys
+import textwrap
 import types
 
 from docopt import docopt
@@ -168,9 +169,9 @@ def _run_command(argv):
     command_name = argv[0]
     _logger.info('Running command "%s" with args: %s', command_name, argv[1:])
     subcommand = _get_subcommand(command_name)
-    _logger.debug('Parsing docstring:%s\nwith arguments %s.',
-                  subcommand.__doc__, argv)
-    args = docopt(subcommand.__doc__, argv=argv)
+    doc = _get_usage(subcommand.__doc__)
+    _logger.debug('Parsing docstring:%s\nwith arguments %s.', doc, argv)
+    args = docopt(doc, argv=argv)
     call = _get_callable(subcommand, args)
     if hasattr(call, 'schema') and not hasattr(call, 'validate'):
         call.validate = call.schema.validate
@@ -204,5 +205,9 @@ def _help(command):
         raise ValueError("Unrecognized option '{}'.".format(command))
     else:
         subcommand = _get_subcommand(command)
-        doc = subcommand.__doc__
+        doc = _get_usage(subcommand.__doc__)
     docopt(doc, argv=('--help',))
+
+
+def _get_usage(doc):
+    return textwrap.dedent(doc)
