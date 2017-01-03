@@ -103,7 +103,7 @@ def _get_subcommands():
     """Return all subcommands for the current command."""
     regex = re.compile(r'{}:(?P<name>[^:]+)$'.format(_COMMAND))
     subcommands = {}
-    for ep in pkg_resources.iter_entry_points(group='docopt_sub'):
+    for ep in pkg_resources.iter_entry_points(group='rapcom'):
         try:
             if ep.name == _COMMAND:
                 subcommands[None] = ep.load()

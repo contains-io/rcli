@@ -1,24 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Install docopt_sub."""
+"""Install rapcom."""
 
 from __future__ import unicode_literals
 
 from setuptools import setup
 from setuptools import find_packages
 
-import docopt_sub
+import rapcom
 
 
 setup(
-    name='docopt_sub',
-    version=docopt_sub.__version__,
-    description='A docopt wrapper to easily implement subcommands.',
+    name='rapcom',
+    version=rapcom.__version__,
+    description='A library for rapidly creating command-line tools.',
     long_description=open('README.md').read(),
     author='Dangle Nuño',
     author_email='dangle@rooph.io',
-    url='https://github.com/dangle/docopt-sub',
+    url='https://github.com/dangle/rapcom',
     keywords=['docopt', 'commands', 'subcommands'],
     license='MIT',
     packages=find_packages(exclude=['tests', 'docs']),
