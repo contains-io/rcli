@@ -1,8 +1,3 @@
-def hello():
-    """usage: say hello"""
-    print('Hello!')
-
-
-def hiya(name):
-    """usage: say hiya <name>"""
-    print('Hiya, {name}!'.format(name=name))
+def hello(name):
+    """usage: say hello <name>"""
+    print('Hello, {name}!'.format(name=name))
