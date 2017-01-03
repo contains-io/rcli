@@ -52,7 +52,6 @@ def hidden_cursor():
 @contextlib.contextmanager
 def display_status():
     """Display an OK or FAILED message for the context block."""
-
     def print_status(msg, color):
         """Print the status message.
 
@@ -93,7 +92,6 @@ def timed_display(msg):
     Args:
         msg: The header message to print at the beginning of the timed block.
     """
-
     def print_header(msg, newline=True):
         """Print a header line.
 
