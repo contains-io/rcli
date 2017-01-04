@@ -56,9 +56,9 @@ def main():
             return _run_command(argv)
     except (KeyboardInterrupt, EOFError):
         return "Cancelling at the user's request."
-    except:
+    except Exception as e:
         _logger.exception('An unexpected error has occurred.')
-        raise
+        return e
 
 
 def _normalize(func, cli_args):

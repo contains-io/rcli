@@ -19,7 +19,7 @@ setup(
     author='Dangle Nuño',
     author_email='dangle@rooph.io',
     url='https://github.com/dangle/rapcom',
-    keywords=['docopt', 'commands', 'subcommands'],
+    keywords=['docopt', 'commands', 'subcommands', 'tooling', 'cli'],
     license='MIT',
     packages=find_packages(exclude=['tests', 'docs']),
     install_requires=[
@@ -27,6 +27,11 @@ setup(
         'tqdm >= 4.8.0, < 5',
         'docopt >= 0.6.2, < 1'
     ],
+    entry_points={
+        'distutils.setup_keywords': [
+            'autodetect_commands = rapcom.autodetect:setup_keyword'
+        ]
+    },
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'License :: OSI Approved :: MIT License',
