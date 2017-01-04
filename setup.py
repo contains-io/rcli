@@ -25,7 +25,8 @@ setup(
     install_requires=[
         'colorama >= 0.3.7, < 0.4',
         'tqdm >= 4.8.0, < 5',
-        'docopt >= 0.6.2, < 1'
+        'docopt >= 0.6.2, < 1',
+        'six >= 1, < 2'
     ],
     entry_points={
         'distutils.setup_keywords': [
