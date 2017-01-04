@@ -14,4 +14,5 @@ def validate_name(**cli_args):
     assert len(cli_args['--name'])
     return cli_args
 
+
 hiya.validate = validate_name
