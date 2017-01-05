@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""An automatic command that handles subcommand dispatch."""
 
-"""An automatic command that handles subcommands in a git-like fashion."""
+from __future__ import unicode_literals
 
 import inspect
 import logging
@@ -16,10 +18,7 @@ import pkg_resources
 import six
 
 
-__all__ = ('main',)
-
-
-_logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 _COMMAND = os.path.basename(os.path.realpath(os.path.abspath(sys.argv[0])))
@@ -58,13 +57,26 @@ def main():
             return _run_command(argv)
     except (KeyboardInterrupt, EOFError):
         return "Cancelling at the user's request."
-    except Exception as e:
-        _logger.exception('An unexpected error has occurred.')
+    except Exception as e:  # pylint: disable=broad-except
+        _LOGGER.exception('An unexpected error has occurred.')
         return e
 
 
 def _normalize(func, cli_args):
-    """Alter the docopt args to be valid python names for func."""
+    """Alter the docopt args to be valid python names for func.
+
+    Returns a dictionary based on cli_args that uses normalized keys. Keys are
+    normalized to valid python names.
+
+    Args:
+        func: The function being called to run the command.
+        cli_args: The parsed results of docopt for the given command.
+
+    Returns:
+        A dictionary containing normalized keys from the CLI arguments. If the
+        CLI arguments contains values that the function will not accept, those
+        keys will not be returned.
+    """
     def _norm(k):
         """Normalize a single key."""
         if k.startswith('--'):
@@ -76,19 +88,38 @@ def _normalize(func, cli_args):
         return k.lower().replace('-', '_')
 
     if isinstance(func, types.FunctionType) or not hasattr(func, '__call__'):
-        params = inspect.getargspec(func)[0]
+        params = _get_signature(func)
     else:
-        params = inspect.getargspec(func.__call__)[0][1:]
+        params = _get_signature(func.__call__)[1:]
     args = {}
-    for k, v in cli_args.items():
+    for k, v in six.iteritems(cli_args):
         nk = _norm(k)
         if nk in params:
             args[nk] = v
     return args
 
 
+def _get_signature(func):
+    """Return the signature of the given function.
+
+    inspect.getargspec() no longer exists as of Python 3.6, so detect the
+    correct method of accessing the signature for each language and return the
+    list of argument names.
+
+    Args:
+        func: The function from which to retrieve parameter names.
+
+    Returns:
+        A list of valid parameter names for the given function.
+    """
+    if six.PY3:
+        return [p.name for p in inspect.signature(func).parameters.values()
+                if p.kind == p.POSITIONAL_OR_KEYWORD]
+    return inspect.getargspec(func).args  # pylint: disable=deprecated-method
+
+
 def _get_entry_point():
-    """Return the current entry point."""
+    """Return the currently active entry point."""
     mod_name = sys.modules[__name__].__name__
     for ep in pkg_resources.iter_entry_points(group='console_scripts'):
         if ep.name == _COMMAND and ep.module_name == mod_name:
@@ -115,13 +146,20 @@ def _get_subcommands():
                 if match:
                     subcommands[match.group('name')] = ep.load()
         except ImportError:
-            _logger.exception('Unable to load command. Skipping.')
+            _LOGGER.exception('Unable to load command. Skipping.')
     return subcommands
 
 
 def _get_subcommand(name):
-    """Return the function for the specified subcommand."""
-    _logger.debug('Accessing subcommand "%s".', name)
+    """Return the function for the specified subcommand.
+
+    Args:
+        name: The name of a subcommand.
+
+    Returns:
+        The loadable object from the entry point represented by the subcommand.
+    """
+    _LOGGER.debug('Accessing subcommand "%s".', name)
     if name not in _SUBCOMMANDS:
         raise ValueError(
             '"{subcommand}" is not a {command} command. \'{command} help -a\' '
@@ -132,12 +170,29 @@ def _get_subcommand(name):
 
 
 def _get_callable(subcommand, args):
-    """Return a callable object from the subcommand."""
-    _logger.debug(
+    """Return a callable object from the subcommand.
+
+    Args:
+        subcommand: A object loaded from an entry point. May be a module,
+            class, or function.
+        args: The list of arguments parsed by docopt, before normalization.
+            These are passed to the init method of any class-based callable
+            objects being returned.
+
+    Returns:
+        The callable entry point for the subcommand. If the subcommand is a
+        function, it will be returned unchanged. If the subcommand is a module
+        or a class, an instance of the command class will be returned.
+
+    Raises:
+        AssertionError: Raised when a module entry point does not have a
+            callable class named Command.
+    """
+    _LOGGER.debug(
         'Creating callable from subcommand "%s" with command line arguments: '
         '%s', subcommand.__name__, args)
     if isinstance(subcommand, types.ModuleType):
-        _logger.debug('Subcommand is a module.')
+        _LOGGER.debug('Subcommand is a module.')
         assert hasattr(subcommand, 'Command'), (
             'Module subcommand must have callable "Command" class definition.')
         subcommand = subcommand.Command
@@ -145,7 +200,7 @@ def _get_callable(subcommand, args):
         try:
             return subcommand(**args)
         except TypeError:
-            _logger.debug('Subcommand does not take arguments.')
+            _LOGGER.debug('Subcommand does not take arguments.')
             return subcommand()
     return subcommand
 
@@ -168,17 +223,17 @@ def _run_command(argv):
         ValueError: Raised if the user attempted to run an invalid command.
     """
     command_name = argv[0]
-    _logger.info('Running command "%s %s" with args: %s', _COMMAND,
+    _LOGGER.info('Running command "%s %s" with args: %s', _COMMAND,
                  command_name, argv[1:])
     subcommand = _get_subcommand(command_name)
     doc = _get_usage(subcommand.__doc__)
-    _logger.debug('Parsing docstring: """%s""" with arguments %s.', doc, argv)
+    _LOGGER.debug('Parsing docstring: """%s""" with arguments %s.', doc, argv)
     args = docopt(doc, argv=argv)
     call = _get_callable(subcommand, args)
     if hasattr(call, 'schema') and not hasattr(call, 'validate'):
         call.validate = call.schema.validate
     if hasattr(call, 'validate'):
-        _logger.debug('Validating command arguments with "%s".', call.validate)
+        _LOGGER.debug('Validating command arguments with "%s".', call.validate)
         args.update(call.validate(args))
     return call(**_normalize(call, args)) or 0
 
@@ -212,6 +267,15 @@ def _help(command):
 
 
 def _get_usage(doc):
+    """Format the docstring for display to the user.
+
+    Args:
+        doc: The docstring to reformat for display.
+
+    Returns:
+        The docstring formatted to parse and display to the user. This includes
+        dedenting, rewrapping, and translating the docstring if necessary.
+    """
     return textwrap.dedent(doc)
 
 
@@ -242,7 +306,14 @@ class _LogColorFormatter(logging.Formatter):
     """A colored logging.Formatter implementation."""
 
     def format(self, record):
-        """Format the log record with timestamps and level based colors."""
+        """Format the log record with timestamps and level based colors.
+
+        Args:
+            record: The log record to format.
+
+        Returns:
+            The formatted log record.
+        """
         if record.levelno >= logging.ERROR:
             color = colorama.Fore.RED
         elif record.levelno >= logging.WARNING:
@@ -258,6 +329,6 @@ class _LogColorFormatter(logging.Formatter):
                 colorama.Fore.RESET,
                 colorama.Style.RESET_ALL
             ))
-        if hasattr(self, '_style'):
-            self._style._fmt = self._fmt
+        if six.PY3:
+            self._style._fmt = self._fmt  # pylint: disable=protected-access
         return super(_LogColorFormatter, self).format(record)
