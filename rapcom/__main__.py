@@ -11,30 +11,31 @@ import textwrap
 import types
 
 from docopt import docopt
+import colorama
 import pkg_resources
+import six
 
 
 __all__ = ('main',)
 
 
+_logger = logging.getLogger(__name__)
+
+
 _COMMAND = os.path.basename(os.path.realpath(os.path.abspath(sys.argv[0])))
+_SUBCOMMANDS = {}
 _DEFAULT_DOC = """
-Usage: {command} <command> [<args>...]
-       {command} (-h | --help)
-       {command} (-V | --version)
+Usage:
+  {command} [--help] [--version] [--log-level <level>] <command> [<args>...]
 
 Options:
-  -h, --help           Display this help message and exit.
-  -V, --version        Display the version and exit.
+  --help               Display this help message and exit.
+  --version            Display the version and exit.
+  --log-level <level>  Set the log level to one of DEBUG, INFO, WARN, or ERROR.
 {{message}}
 '{command} help -a' lists all available subcommands.
 See '{command} help <command>' for more information on a specific command.
 """.format(command=_COMMAND)
-
-
-logging.getLogger().addHandler(logging.NullHandler())
-_logger = logging.getLogger(__name__)
-_subcommands = {}
 
 
 def main():
@@ -43,10 +44,11 @@ def main():
     If the command is 'help' then print the help message for the subcommand; if
     no subcommand is given, print the standard help message.
     """
-    _subcommands.update(_get_subcommands())
+    _SUBCOMMANDS.update(_get_subcommands())
     dist_version = _get_dist_version()
     doc = _DEFAULT_DOC.format(message='')
     args = docopt(doc, version=dist_version, options_first=True)
+    _enable_logging(args['--log-level'])
     try:
         if args['<command>'] == 'help':
             subcommand = next(iter(args['<args>']), None)
@@ -120,13 +122,13 @@ def _get_subcommands():
 def _get_subcommand(name):
     """Return the function for the specified subcommand."""
     _logger.debug('Accessing subcommand "%s".', name)
-    if name not in _subcommands:
+    if name not in _SUBCOMMANDS:
         raise ValueError(
             '"{subcommand}" is not a {command} command. \'{command} help -a\' '
             'lists all available subcommands.'.format(
                 command=_COMMAND, subcommand=name)
         )
-    return _subcommands[name]
+    return _SUBCOMMANDS[name]
 
 
 def _get_callable(subcommand, args):
@@ -139,8 +141,7 @@ def _get_callable(subcommand, args):
         assert hasattr(subcommand, 'Command'), (
             'Module subcommand must have callable "Command" class definition.')
         subcommand = subcommand.Command
-    if (isinstance(subcommand, types.ClassType) or
-            isinstance(subcommand, types.TypeType)):
+    if any(isinstance(subcommand, t) for t in six.class_types):
         try:
             return subcommand(**args)
         except TypeError:
@@ -167,10 +168,11 @@ def _run_command(argv):
         ValueError: Raised if the user attempted to run an invalid command.
     """
     command_name = argv[0]
-    _logger.info('Running command "%s" with args: %s', command_name, argv[1:])
+    _logger.info('Running command "%s %s" with args: %s', _COMMAND,
+                 command_name, argv[1:])
     subcommand = _get_subcommand(command_name)
     doc = _get_usage(subcommand.__doc__)
-    _logger.debug('Parsing docstring:%s\nwith arguments %s.', doc, argv)
+    _logger.debug('Parsing docstring: """%s""" with arguments %s.', doc, argv)
     args = docopt(doc, argv=argv)
     call = _get_callable(subcommand, args)
     if hasattr(call, 'schema') and not hasattr(call, 'validate'):
@@ -197,9 +199,9 @@ def _help(command):
     if not command:
         doc = _DEFAULT_DOC.format(message='')
     elif command in ('-a', '--all'):
-        available_commands = (k for k in _subcommands.keys() if k)
+        available_commands = [k for k in _SUBCOMMANDS.keys() if k] + ['help']
         command_doc = '\nAvailable commands:\n{}\n'.format(
-            '\n'.join('  {}'.format(c) for c in available_commands))
+            '\n'.join('  {}'.format(c) for c in sorted(available_commands)))
         doc = _DEFAULT_DOC.format(message=command_doc)
     elif command.startswith('-'):
         raise ValueError("Unrecognized option '{}'.".format(command))
@@ -211,3 +213,51 @@ def _help(command):
 
 def _get_usage(doc):
     return textwrap.dedent(doc)
+
+
+def _enable_logging(log_level):
+    """Set the root logger to the given log level and add a color formatter.
+
+    Args:
+        log_level: The logging level to set the root logger. Must be None,
+            "DEBUG", "INFO", "WARN", or "ERROR".
+
+    Raises:
+        ValueError: Raised if the given log level is not in the acceptable
+            list of values.
+    """
+    if log_level not in (None, 'DEBUG', 'INFO', 'WARN', 'ERROR'):
+        raise ValueError('Invalid log level "{}".'.format(log_level))
+    root_logger = logging.getLogger()
+    if log_level:
+        handler = logging.StreamHandler()
+        handler.setFormatter(_LogColorFormatter())
+        root_logger.addHandler(handler)
+        root_logger.setLevel(getattr(logging, log_level))
+    else:
+        root_logger.addHandler(logging.NullHandler())
+
+
+class _LogColorFormatter(logging.Formatter):
+    """A colored logging.Formatter implementation."""
+
+    def format(self, record):
+        """Format the log record with timestamps and level based colors."""
+        if record.levelno >= logging.ERROR:
+            color = colorama.Fore.RED
+        elif record.levelno >= logging.WARNING:
+            color = colorama.Fore.YELLOW
+        elif record.levelno >= logging.INFO:
+            color = colorama.Fore.RESET
+        else:
+            color = colorama.Fore.CYAN
+        self._fmt = (
+            '{}{}%(levelname)s{} [%(asctime)s][%(name)s]{} %(message)s'.format(
+                colorama.Style.BRIGHT,
+                color,
+                colorama.Fore.RESET,
+                colorama.Style.RESET_ALL
+            ))
+        if hasattr(self, '_style'):
+            self._style._fmt = self._fmt
+        return super(_LogColorFormatter, self).format(record)
