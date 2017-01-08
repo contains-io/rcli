@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
 """Utility methods for working with the CLI."""
+
+from __future__ import unicode_literals
 
 import contextlib
 import logging
@@ -12,7 +15,7 @@ from colorama import Style
 from tqdm import tqdm
 
 
-logger = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 class Status(Exception):
@@ -38,13 +41,13 @@ class Status(Exception):
 @contextlib.contextmanager
 def hidden_cursor():
     """Temporarily hide the terminal cursor."""
-    logger.debug('Hiding cursor.')
+    _LOGGER.debug('Hiding cursor.')
     tqdm.write('\x1B[?25l', end='')
     sys.stdout.flush()
     try:
         yield
     finally:
-        logger.debug('Showing cursor.')
+        _LOGGER.debug('Showing cursor.')
         tqdm.write('\n\x1B[?25h', end='')
         sys.stdout.flush()
 
@@ -52,7 +55,6 @@ def hidden_cursor():
 @contextlib.contextmanager
 def display_status():
     """Display an OK or FAILED message for the context block."""
-
     def print_status(msg, color):
         """Print the status message.
 
@@ -73,10 +75,10 @@ def display_status():
     try:
         yield
     except Status as e:
-        logger.debug(e)
+        _LOGGER.debug(e)
         print_status(e.msg, e.color)
-        if e.exc is not None:
-            raise e.exc
+        if e.exc:
+            raise e.exc  # pylint: disable=raising-bad-type
     except (KeyboardInterrupt, EOFError):
         raise
     except:
@@ -93,7 +95,6 @@ def timed_display(msg):
     Args:
         msg: The header message to print at the beginning of the timed block.
     """
-
     def print_header(msg, newline=True):
         """Print a header line.
 
