@@ -4,9 +4,6 @@
 
 from __future__ import unicode_literals
 
-import subprocess
-import sys
-
 from setuptools import setup
 from setuptools import find_packages
 
