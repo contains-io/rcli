@@ -1,13 +1,19 @@
 language: python
 sudo: false
 python:
-  - '2.7'
-  - '3.3'
-  - '3.4'
-  - '3.5'
-  - '3.6'
-  - 'nightly'
+- '2.7'
+- '3.3'
+- '3.4'
+- '3.5'
+- '3.6'
 install:
-  - pip install flake8
+- pip install tox-travis
 script:
-  - flake8 .
+- tox
+deploy:
+  provider: pypi
+  user: dangle
+  password:
+    secure: lllkv5qDm+VJzuKwjglVw78OuLebBtB6ocCurc66sFl1CScwW1d0agBYUO/tFSjxYkgKhO+3/zkj+agyenz9ikbpIszmv0VuJAIuVhYVwcXJVb8Qgo8mQcfSkczj/EJJQk7StfeOshW5vUmpUSGFWlmZBAnbnipmoVrVxqTGlWi4UYIDvzswtv016iPOGpaOlZ/qXjwnGZKMoaVLsnwfaAHyGM4HTydUVU6QQzPTOqRZym3WYyj746FwsyMzLpYcLZK8lANuOU2eE8YxfU2cfbHDgikIg9Vp0x2PZDtuuP0YoPgdD4BJoV+FVth+aREjozKoBb0lO0cdGAuOs34q0oulLufX65TxPLPwGwuyyli1CWHySfO51sosGn1YfJiFpBODtWKBmSTAYmgmSq7rADy9dSVVpVoaTd3hRjn0c+sQYUTClNUqCcVTZVtts7CrfcOCFrmA6Qxza1Em14YdQ5TMQNbsl/a3ibl5tZIK1g5uRoYhsMmMlaMi4aGElvefOXI76uGquF/EkwPKx+59KpjVC09pC8VAJllFTVqmtZEB+GNE5TZ99rQof9kZKCzK83j3T9n3cR4L33mBi3ZYFoauuYexPFkwV5ZKpebjOnoUeipR4vQT0FF4N2hCkUDF9M6i0JNl7ZihWR2wwIeQYIx5Ymw8F+amloQybDQ5Clw=
+  on:
+    tags: true
