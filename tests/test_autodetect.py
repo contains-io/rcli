@@ -3,6 +3,8 @@
 
 from __future__ import unicode_literals
 
+import textwrap
+
 import pytest
 
 
@@ -29,6 +31,25 @@ def test_multiple_commands(create_project, run):
     '''):
         assert run('say hello world') == 'Hello, world!\n'
         assert run('say hiya') == 'Hiya!\n'
+
+
+def test_primary_command_only(create_project, run):
+    """Test creating a command that overwrites the primary command."""
+    usage = """
+            Usage: hello [--name <name>]
+
+            Options:
+                --name <name>  The name to print [default: world].
+            """
+    with create_project('''
+        def hello(name):
+            """{usage}"""
+            print('Hello, {{name}}!'.format(name=name))
+    '''.format(usage=usage)):
+        assert run('hello --name everyone') == 'Hello, everyone!\n'
+        assert run('hello') == 'Hello, world!\n'
+        assert (textwrap.dedent(run('hello -h')).strip() ==
+                textwrap.dedent(usage).strip())
 
 
 @pytest.mark.xfail
