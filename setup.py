@@ -4,37 +4,17 @@
 
 from __future__ import unicode_literals
 
-import subprocess
-import sys
-
 from setuptools import setup
 from setuptools import find_packages
 
-from rapcom import __version__ as version
+import rapcom
 
-
-if sys.argv[-1] == 'publish':
-    subprocess.call(['python', 'setup.py', 'sdist', 'upload'])
-    subprocess.call(['python', 'setup.py', 'bdist_wheel', 'upload'])
-    sys.exit()
-
-if sys.argv[-1] == 'tag':
-    subprocess.call(['git', 'tag', '-a', version, '-m', 'v{}'.format(version)])
-    subprocess.call(['git', 'push', '--tags'])
-    sys.exit()
-
-try:
-    import pypandoc
-    long_description = pypandoc.convert('README.md', 'rst')
-except ImportError:
-    with open('README.md') as readme:
-        long_description = readme.read()
 
 setup(
     name='rapcom',
-    version=version,
+    version=rapcom.__version__,
     description='A library for rapidly creating command-line tools.',
-    long_description=long_description,
+    long_description=open('README.md').read(),
     author='Dangle Nuño',
     author_email='dangle@rooph.io',
     url='https://github.com/dangle/rapcom',
@@ -66,6 +46,7 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Intended Audience :: Developers',
         'Topic :: Utilities'
     ]

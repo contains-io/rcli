@@ -206,6 +206,8 @@ def _parse_commands(docstring):
         subcommand = None
         if len(args) > 1 and not (args[1].startswith('<') or
                                   args[1].startswith('-') or
+                                  args[1].startswith('[') or
+                                  args[1].startswith('(') or
                                   args[1].isupper()):
             subcommand = args[1]
         yield command, subcommand

@@ -45,15 +45,19 @@ def main():
     """
     _SUBCOMMANDS.update(_get_subcommands())
     dist_version = _get_dist_version()
-    doc = _DEFAULT_DOC.format(message='')
-    args = docopt(doc, version=dist_version, options_first=True)
-    _enable_logging(args['--log-level'])
+    if None not in _SUBCOMMANDS:
+        doc = _DEFAULT_DOC.format(message='')
+    else:
+        doc = _SUBCOMMANDS[None].__doc__
+    allow_subcommands = '<command>' in doc
+    args = docopt(doc, version=dist_version, options_first=allow_subcommands)
+    _enable_logging(args.get('--log-level'))
     try:
-        if args['<command>'] == 'help':
+        if args.get('<command>') == 'help':
             subcommand = next(iter(args['<args>']), None)
             return _help(subcommand)
         else:
-            argv = [args['<command>']] + args['<args>']
+            argv = [args.get('<command>')] + args.get('<args>', sys.argv[1:])
             return _run_command(argv)
     except (KeyboardInterrupt, EOFError):
         return "Cancelling at the user's request."
@@ -223,6 +227,8 @@ def _run_command(argv):
         ValueError: Raised if the user attempted to run an invalid command.
     """
     command_name = argv[0]
+    if not command_name:
+        argv = argv[1:]
     _LOGGER.info('Running command "%s %s" with args: %s', _COMMAND,
                  command_name, argv[1:])
     subcommand = _get_subcommand(command_name)
