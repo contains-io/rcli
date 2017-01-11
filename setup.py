@@ -17,7 +17,7 @@ setup(
     long_description=open('README.md').read(),
     author='Dangle Nuño',
     author_email='dangle@rooph.io',
-    url='https://github.com/dangle/rapcom',
+    url='https://github.com/containenv/rapcom',
     keywords=['docopt', 'commands', 'subcommands', 'tooling', 'cli'],
     license='MIT',
     packages=find_packages(exclude=['tests', 'docs']),
