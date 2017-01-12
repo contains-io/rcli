@@ -5,8 +5,6 @@ from __future__ import unicode_literals
 
 import textwrap
 
-import pytest
-
 
 def test_single_command(create_project, run):
     """Test that a single command is successfully generated."""
@@ -52,12 +50,12 @@ def test_primary_command_only(create_project, run):
                 textwrap.dedent(usage).strip())
 
 
-@pytest.mark.xfail
 def test_subcmd_with_same_name(create_project, run):
     """Test that a command with a subcommand of the same name does not fail."""
     with create_project('''
-        def hiya():
+        def say():
             """usage: say say"""
             print('Say!')
     '''):
         assert run('say say') == 'Say!\n'
+        assert run('say --log-level DEBUG say') == 'Say!\n'
