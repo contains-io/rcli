@@ -213,9 +213,15 @@ def _run_command(argv):
     """Run the command with the the given CLI options and exit.
 
     Command functions are expected to have a __doc__ string that is parseable
-    by docopt. If the the function object has a 'validate' attribute, the
+    by docopt.
+
+    If the the function object has a 'validate' attribute, the
     arguments passed to the command will be validated before the command is
     called.
+
+    If the function object has a 'schema' attribute, but not a 'validate'
+    attribute, and the 'schema' attribute has a 'validate' attribute, the
+    schema validate method will be called for validation.
 
     Args:
         argv: The list of command line arguments supplied for a command. The
@@ -226,22 +232,75 @@ def _run_command(argv):
     Raises:
         ValueError: Raised if the user attempted to run an invalid command.
     """
+    command_name, argv = _get_command_and_argv(argv)
+    _LOGGER.info('Running command "%s %s" with args: %s', _COMMAND,
+                 command_name, argv)
+    subcommand = _get_subcommand(command_name)
+    doc = _get_usage(subcommand.__doc__)
+    args = _get_parsed_args(command_name, doc, argv)
+    call = _get_callable(subcommand, args)
+    args = _validate(call, args)
+    return call(**_normalize(call, args)) or 0
+
+
+def _get_command_and_argv(argv):
+    """Extract the command name and arguments to pass to docopt.
+
+    Args:
+        argv: The argument list being used to run the command.
+
+    Returns:
+        A tuple containing the name of the command and the arguments to pass
+        to docopt.
+    """
     command_name = argv[0]
     if not command_name:
         argv = argv[1:]
-    _LOGGER.info('Running command "%s %s" with args: %s', _COMMAND,
-                 command_name, argv[1:])
-    subcommand = _get_subcommand(command_name)
-    doc = _get_usage(subcommand.__doc__)
+    elif command_name == _COMMAND:
+        argv.remove(command_name)
+    return command_name, argv
+
+
+def _get_parsed_args(command_name, doc, argv):
+    """Parse the docstring with docopt.
+
+    Args:
+        command_name: The name of the subcommand to parse.
+        doc: A docopt-parseable string.
+        argv: The list of arguments to pass to docopt during parsing.
+
+    Returns:
+        The docopt results dictionary. If the subcommand has the same name as
+        the primary command, the subcommand value will be added to the
+        dictionary.
+    """
     _LOGGER.debug('Parsing docstring: """%s""" with arguments %s.', doc, argv)
     args = docopt(doc, argv=argv)
-    call = _get_callable(subcommand, args)
-    if hasattr(call, 'schema') and not hasattr(call, 'validate'):
+    if command_name == _COMMAND:
+        args[command_name] = True
+    return args
+
+
+def _validate(call, args):
+    """Validate the arguments against the callable.
+
+    Args:
+        call: The subcommand callable object that may have a validate or schema
+            attribute.
+        args:
+            The resulting dictionary from the prior docopt parse.
+
+    Returns:
+        An updated version of the args dictionary that has been validated and
+        cast using the validate methods available on the callable.
+    """
+    has_schema = hasattr(call, 'schema') and hasattr(call.schema, 'validate')
+    if not hasattr(call, 'validate') and has_schema:
         call.validate = call.schema.validate
     if hasattr(call, 'validate'):
         _LOGGER.debug('Validating command arguments with "%s".', call.validate)
         args.update(call.validate(args))
-    return call(**_normalize(call, args)) or 0
+    return args
 
 
 def _help(command):
