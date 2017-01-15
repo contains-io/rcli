@@ -6,12 +6,45 @@ from __future__ import unicode_literals
 import textwrap
 
 
-def test_single_command(create_project, run):
+def test_func_command(create_project, run):
     """Test that a single command is successfully generated."""
     with create_project('''
         def hello(name):
             """usage: say hello <name>"""
             print('Hello, {name}!'.format(name=name))
+    '''):
+        assert run('say hello world') == 'Hello, world!\n'
+
+
+def test_class_command(create_project, run):
+    """Test that class commands are generated correctly."""
+    with create_project('''
+        class Say:
+            """usage: say hello <name>"""
+            def __call__(self, name):
+                print('Hello, {name}!'.format(name=name))
+    '''):
+        assert run('say --log-level DEBUG hello world') == 'Hello, world!\n'
+
+
+def test_class_command_from_obj(create_project, run):
+    """Test that class commands inheriting from object are generated."""
+    with create_project('''
+        class Say(object):
+            """usage: say hello <name>"""
+            def __call__(self, name):
+                print('Hello, {name}!'.format(name=name))
+    '''):
+        assert run('say hello world') == 'Hello, world!\n'
+
+
+def test_mod_command(create_project, run):
+    """Test that module commands are generated and called correctly."""
+    with create_project('''
+        """usage: say hello <name>"""
+        class Command(object):
+            def __call__(self, name):
+                print('Hello, {name}!'.format(name=name))
     '''):
         assert run('say hello world') == 'Hello, world!\n'
 
@@ -26,12 +59,17 @@ def test_multiple_commands(create_project, run):
         def hiya():
             """usage: say hiya"""
             print('Hiya!')
+
+        def rawr():
+            """usage: roar rawr"""
+            print('RAWR!')
     '''):
         assert run('say hello world') == 'Hello, world!\n'
         assert run('say hiya') == 'Hiya!\n'
+        assert run('roar rawr') == 'RAWR!\n'
 
 
-def test_primary_command_only(create_project, run):
+def test_custom_primary_command(create_project, run):
     """Test creating a command that overwrites the primary command."""
     usage = """
             Usage: hello [--name <name>]
@@ -50,7 +88,47 @@ def test_primary_command_only(create_project, run):
                 textwrap.dedent(usage).strip())
 
 
-def test_subcmd_with_same_name(create_project, run):
+def test_primary_command_with_dispatch(create_project, run):
+    """Test that custom primary commands support dispatch."""
+    with create_project('''
+        def roar():
+            """
+            Usage: roar [--log-level <level>] [<command>]
+
+            Options:
+              --log-level <level>  The log level.
+            """
+            print('ROAR!')
+
+        def rawr():
+            """usage: roar rawr"""
+            print('RAWR!')
+    '''):
+        assert run('roar') == 'ROAR!\n'
+        assert run('roar rawr') == 'RAWR!\n'
+
+
+def test_primary_command_with_dispatch_args(create_project, run):
+    """Test that custom primary commands support dispatch."""
+    with create_project('''
+        def roar():
+            """
+            Usage: roar [--log-level <level>] [<command> [<args>...]]
+
+            Options:
+              --log-level <level>  The log level.
+            """
+            print('ROAR!')
+
+        def rawr():
+            """usage: roar rawr"""
+            print('RAWR!')
+    '''):
+        assert run('roar') == 'ROAR!\n'
+        assert run('roar --log-level DEBUG rawr') == 'RAWR!\n'
+
+
+def test_subcommand_with_same_name(create_project, run):
     """Test that a command with a subcommand of the same name does not fail."""
     with create_project('''
         def say():

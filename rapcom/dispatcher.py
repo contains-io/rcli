@@ -54,10 +54,11 @@ def main():
     _enable_logging(args.get('--log-level'))
     try:
         if args.get('<command>') == 'help':
-            subcommand = next(iter(args['<args>']), None)
+            subcommand = next(iter(args.get('<args>')), None)
             return _help(subcommand)
         else:
-            argv = [args.get('<command>')] + args.get('<args>', sys.argv[1:])
+            default_args = sys.argv[2 if args.get('<command>') else 1:]
+            argv = [args.get('<command>')] + args.get('<args>', default_args)
             return _run_command(argv)
     except (KeyboardInterrupt, EOFError):
         return "Cancelling at the user's request."
@@ -91,15 +92,17 @@ def _normalize(func, cli_args):
             k = k[1:-1]
         return k.lower().replace('-', '_')
 
-    if isinstance(func, types.FunctionType) or not hasattr(func, '__call__'):
-        params = _get_signature(func)
-    else:
-        params = _get_signature(func.__call__)[1:]
+    assert hasattr(func, '__call__'), (
+        'Cannot normalize parameters of a non-callable.')
+    is_func = isinstance(func, types.FunctionType)
+    params = _get_signature(func if is_func else func.__call__)
+    _LOGGER.debug('Found signature parameters: %s', params)
     args = {}
     for k, v in six.iteritems(cli_args):
         nk = _norm(k)
         if nk in params:
             args[nk] = v
+    _LOGGER.debug('Normalized "%s" to "%s".', cli_args, args)
     return args
 
 
@@ -119,7 +122,10 @@ def _get_signature(func):
     if six.PY3:
         return [p.name for p in inspect.signature(func).parameters.values()
                 if p.kind == p.POSITIONAL_OR_KEYWORD]
-    return inspect.getargspec(func).args  # pylint: disable=deprecated-method
+    sig = inspect.getargspec(func).args  # pylint: disable=deprecated-method
+    if six.PY2 and isinstance(func, types.MethodType):
+        sig = sig[1:]
+    return sig
 
 
 def _get_entry_point():
@@ -357,6 +363,9 @@ def _enable_logging(log_level):
     """
     if log_level not in (None, 'DEBUG', 'INFO', 'WARN', 'ERROR'):
         raise ValueError('Invalid log level "{}".'.format(log_level))
+    if '--log-level' in sys.argv:
+        sys.argv.remove('--log-level')
+        sys.argv.remove(log_level)
     root_logger = logging.getLogger()
     if log_level:
         handler = logging.StreamHandler()
