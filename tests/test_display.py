@@ -41,4 +41,5 @@ def test_run_tasks(capsys):
     assert lines[2] == 'Task 2\r[  OK  ]'
     assert lines[3] == 'Task 3\r[CUSTOM]'
     assert lines[4] == 'Task 4\r[FAILED]'
-    assert lines[5] == ('=' * 30) + ' completed in 0.00s ' + ('=' * 30)
+    assert re.match(r'{0} completed in \d.\d\ds {0}'.format(('=' * 30)),
+                    lines[5])
