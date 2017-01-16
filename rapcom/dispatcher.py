@@ -17,6 +17,8 @@ import colorama
 import pkg_resources
 import six
 
+from . import exceptions as exc
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,8 +53,8 @@ def main():
         doc = _SUBCOMMANDS[None].__doc__
     allow_subcommands = '<command>' in doc
     args = docopt(doc, version=dist_version, options_first=allow_subcommands)
-    _enable_logging(args.get('--log-level'))
     try:
+        _enable_logging(args.get('--log-level'))
         if args.get('<command>') == 'help':
             subcommand = next(iter(args.get('<args>')), None)
             return _help(subcommand)
@@ -60,6 +62,8 @@ def main():
             default_args = sys.argv[2 if args.get('<command>') else 1:]
             argv = [args.get('<command>')] + args.get('<args>', default_args)
             return _run_command(argv)
+    except exc.InvalidCliValueError as e:
+        return e
     except (KeyboardInterrupt, EOFError):
         return "Cancelling at the user's request."
     except Exception as e:  # pylint: disable=broad-except
@@ -362,7 +366,7 @@ def _enable_logging(log_level):
             list of values.
     """
     if log_level not in (None, 'DEBUG', 'INFO', 'WARN', 'ERROR'):
-        raise ValueError('Invalid log level "{}".'.format(log_level))
+        raise exc.InvalidLogLevelError(log_level)
     if '--log-level' in sys.argv:
         sys.argv.remove('--log-level')
         sys.argv.remove(log_level)
