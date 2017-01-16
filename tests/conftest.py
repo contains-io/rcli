@@ -93,7 +93,7 @@ def run():
         A function that wraps subprocess.check_output, splits the input
         command, and decodes the output using the system encoding.
     """
-    def _inner(command):
+    def _inner(command, stderr=False):
         """Run the given command and decode the output.
 
         Args:
@@ -108,7 +108,11 @@ def run():
             CalledProcessError: Raised when the command returns a non-zero exit
                 code.
         """
-        output = subprocess.check_output(command.split())
+        try:
+            output = subprocess.check_output(
+                command.split(), stderr=subprocess.STDOUT if stderr else None)
+        except subprocess.CalledProcessError as e:
+            output = e.output
         return output.decode(sys.stdout.encoding)
     return _inner
 
