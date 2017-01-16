@@ -7,7 +7,7 @@ setup(
     install_requires=['rapcom'],
     entry_points={
         'console_scripts': [
-            'say = rapcom.__main__:main'
+            'say = rapcom.dispatcher:main'
         ],
         'rapcom': [
             'say:hello = explicit_example:hello',

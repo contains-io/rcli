@@ -29,7 +29,7 @@ setup(
         'backports.shutil_get_terminal_size'
     ],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest >= 2.9, < 3'],
+    tests_require=['pytest >= 2.9'],
     entry_points={
         'distutils.setup_keywords': [
             'autodetect_commands = rapcom.autodetect:setup_keyword'

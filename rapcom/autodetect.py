@@ -41,7 +41,7 @@ def setup_keyword(dist, _, value):
         dist.entry_points = {}
     for command, subcommands in six.iteritems(_get_commands(dist)):
         dist.entry_points.setdefault('console_scripts', []).append(
-            '{command} = rapcom.__main__:main'.format(command=command)
+            '{command} = rapcom.dispatcher:main'.format(command=command)
         )
         dist.entry_points.setdefault('rapcom', []).extend(subcommands)
 

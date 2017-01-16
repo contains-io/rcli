@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """Utility methods for working with the CLI."""
 
+from __future__ import print_function
 from __future__ import unicode_literals
 
 import contextlib
 import logging
-import subprocess
 import sys
 import time
 
@@ -13,6 +13,11 @@ from colorama import Cursor
 from colorama import Fore
 from colorama import Style
 from tqdm import tqdm
+
+try:
+    from shutils import get_terminal_size
+except ImportError:
+    from backports.shutil_get_terminal_size import get_terminal_size
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,13 +47,13 @@ class Status(Exception):
 def hidden_cursor():
     """Temporarily hide the terminal cursor."""
     _LOGGER.debug('Hiding cursor.')
-    tqdm.write('\x1B[?25l', end='')
+    print('\x1B[?25l', end='')
     sys.stdout.flush()
     try:
         yield
     finally:
         _LOGGER.debug('Showing cursor.')
-        tqdm.write('\n\x1B[?25h', end='')
+        print('\n\x1B[?25h', end='')
         sys.stdout.flush()
 
 
@@ -62,7 +67,7 @@ def display_status():
             msg: The message to display (e.g. OK or FAILED).
             color: The ANSI color code to use in displaying the message.
         """
-        tqdm.write('\r{}{}[{color}{msg}{}]{}'.format(
+        print('\r{}{}[{color}{msg}{}]{}'.format(
             Cursor.FORWARD(_ncols() - 8),
             Style.BRIGHT,
             Fore.RESET,
@@ -104,10 +109,10 @@ def timed_display(msg):
                 header. This can be convenient for allowing the line to
                 overwrite another.
         """
-        tqdm.write('\r', end=Style.BRIGHT + Fore.BLUE)
-        tqdm.write(' {} '.format(msg).center(_ncols(), '='),
-                   end='\n{}'.format(Style.RESET_ALL)
-                   if newline else Style.RESET_ALL)
+        print('\r', end=Style.BRIGHT + Fore.BLUE)
+        print(' {} '.format(msg).center(_ncols(), '='),
+              end='\n{}'.format(Style.RESET_ALL)
+              if newline else Style.RESET_ALL)
         sys.stdout.flush()
 
     def print_message(msg):
@@ -116,7 +121,7 @@ def timed_display(msg):
         Args:
             msg: The message to display before running the task.
         """
-        tqdm.write('\r{}'.format(msg), end='')
+        print('\r{}'.format(msg), end='')
         sys.stdout.flush()
 
     start = time.time()
@@ -140,7 +145,7 @@ def run_tasks(header, tasks):
     """
     tasks = list(tasks)
     with timed_display(header) as print_message:
-        with tqdm(tasks, file=sys.stdout, position=1, desc='Progress',
+        with tqdm(tasks, position=1, desc='Progress',
                   bar_format='{desc}{percentage:3.0f}% |{bar}|',
                   total=sum(t[2] if len(t) > 2 else 1 for t in tasks),
                   dynamic_ncols=True) as pbar:
@@ -156,26 +161,9 @@ def run_tasks(header, tasks):
 def _ncols():
     """Get the current number of columns on the terminal.
 
-    It first attempts to use the Python 3 method for retrieving column size. If
-    that fails, it looks for the Python 2 backport of the Python 3 method.
-    Failing that, it attempts to call out to the operating system to retrive
-    the current number of columns. If all else fails, it assumes a width of 80.
-
     Returns:
-        The current number of columns in the terminal, or 80 if unable to
-        detect the current number of columns.
+        The current number of columns in the terminal or 80 if there is no tty.
     """
-    try:
-        import shutils
-        return shutils.get_terminal_size().columns
-    except ImportError:
-        pass
-    try:
-        import backports.shutil_get_terminal_size
-        return backports.shutil_get_terminal_size.get_terminal_size().columns
-    except ImportError:
-        pass
-    try:
-        return int(subprocess.check_output(['stty', 'size']).split()[1])
-    except (subprocess.CalledProcessError, ValueError, IndexError):
+    if not sys.stdout.isatty():
         return 80
+    return get_terminal_size().columns
