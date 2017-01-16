@@ -14,7 +14,7 @@ setup(
     name='rapcom',
     version=rapcom.__version__,
     description='A library for rapidly creating command-line tools.',
-    long_description=open('README.md').read(),
+    long_description=open('README.rst').read(),
     author='Dangle Nuño',
     author_email='dangle@rooph.io',
     url='https://github.com/containenv/rapcom',
