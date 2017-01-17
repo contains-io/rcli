@@ -1,6 +1,9 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""An automatic command that handles subcommand dispatch."""
+"""An automatic command that handles subcommand dispatch.
+
+Functions:
+    main: The console script entry point set by autodetected CLI scripts.
+"""
 
 from __future__ import unicode_literals
 
