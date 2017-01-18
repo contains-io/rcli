@@ -30,11 +30,14 @@ _COMMAND = os.path.basename(os.path.realpath(os.path.abspath(sys.argv[0])))
 _SUBCOMMANDS = {}
 _DEFAULT_DOC = """
 Usage:
-  {command} [--help] [--version] [--log-level <level>] <command> [<args>...]
+  {command} [--help] [--version] [--log-level <level> | --debug | --verbose]
+            <command> [<args>...]
 
 Options:
   --help               Display this help message and exit.
-  --version            Display the version and exit.
+  -V, --version        Display the version and exit.
+  -d, --debug          Set the log level to DEBUG.
+  -v, --verbose        Set the log level to INFO.
   --log-level <level>  Set the log level to one of DEBUG, INFO, WARN, or ERROR.
 {{message}}
 '{command} help -a' lists all available subcommands.
@@ -56,8 +59,9 @@ def main():
         doc = _SUBCOMMANDS[None].__doc__
     allow_subcommands = '<command>' in doc
     args = docopt(doc, version=dist_version, options_first=allow_subcommands)
+    log_level = _get_log_level(args)
     try:
-        _enable_logging(args.get('--log-level'))
+        _enable_logging(log_level)
         if args.get('<command>') == 'help':
             subcommand = next(iter(args.get('<args>')), None)
             return _help(subcommand)
@@ -223,12 +227,12 @@ def _get_callable(subcommand, args):
 
 
 def _run_command(argv):
-    """Run the command with the the given CLI options and exit.
+    """Run the command with the given CLI options and exit.
 
     Command functions are expected to have a __doc__ string that is parseable
     by docopt.
 
-    If the the function object has a 'validate' attribute, the
+    If the function object has a 'validate' attribute, the
     arguments passed to the command will be validated before the command is
     called.
 
@@ -368,19 +372,50 @@ def _enable_logging(log_level):
         ValueError: Raised if the given log level is not in the acceptable
             list of values.
     """
+    root_logger = logging.getLogger()
+    root_logger.addHandler(logging.NullHandler())
     if log_level not in (None, 'DEBUG', 'INFO', 'WARN', 'ERROR'):
         raise exc.InvalidLogLevelError(log_level)
-    if '--log-level' in sys.argv:
-        sys.argv.remove('--log-level')
-        sys.argv.remove(log_level)
-    root_logger = logging.getLogger()
     if log_level:
         handler = logging.StreamHandler()
         handler.setFormatter(_LogColorFormatter())
         root_logger.addHandler(handler)
         root_logger.setLevel(getattr(logging, log_level))
-    else:
-        root_logger.addHandler(logging.NullHandler())
+
+
+def _get_log_level(args):
+    """Get the log level from the CLI arguments.
+
+    Removes logging arguments from sys.argv.
+
+    Args:
+        args: The parsed docopt arguments to be used to determine the logging
+            level.
+
+    Returns:
+        The correct log level based on the three CLI arguments given.
+    """
+    idx = -1
+    log_level = None
+    if '<command>' in args and args['<command>']:
+        idx = sys.argv.index(args['<command>'])
+    if args.get('--debug'):
+        log_level = 'DEBUG'
+        if '--debug' in sys.argv and sys.argv.index('--debug') < idx:
+            sys.argv.remove('--debug')
+        elif '-d' in sys.argv and sys.argv.index('-d') < idx:
+            sys.argv.remove('-d')
+    elif args.get('--verbose'):
+        log_level = 'INFO'
+        if '--verbose' in sys.argv and sys.argv.index('--verbose') < idx:
+            sys.argv.remove('--verbose')
+        elif '-v' in sys.argv and sys.argv.index('-v') < idx:
+            sys.argv.remove('-v')
+    elif args.get('--log-level'):
+        log_level = args['--log-level']
+        sys.argv.remove('--log-level')
+        sys.argv.remove(log_level)
+    return log_level
 
 
 class _LogColorFormatter(logging.Formatter):
