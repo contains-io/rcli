@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for autodetection of commands."""
+"""Tests that verify that logging works as expected."""
 
 from __future__ import unicode_literals
 

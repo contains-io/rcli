@@ -5,6 +5,7 @@ Functions:
     create_project: A factory that creates a project structure and installs it.
     run: A wrapper around subprocess.check_output to handle common
         functionality.
+    id_: A unique 24 character ID that can be used in a test.
 """
 
 from __future__ import unicode_literals
