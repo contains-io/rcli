@@ -1,5 +1,22 @@
 # -*- coding: utf-8 -*-
-"""Utility methods for working with the CLI."""
+"""Utility methods for working with the CLI.
+
+Classes:
+    Status: A special exception that will set a status message.
+
+Functions:
+    hidden_cursor: A context manager that will hide the terminal cursor and
+        show it once the context is over.
+    display_status: A context manager that will watch for exceptions and print
+        a six character status message of either [  OK  ], [FAILED], or a
+        custom status.
+    timed_display: A context manager that prints a header line, a group of
+        status messages, and finally, a footer line with the length of time
+        taken to complete the block.
+    run_tasks: A function that takes a list of callables as tasks and prints
+        a header, status messages for each task, and creates a progress bar
+        to show how much remains to be done.
+"""
 
 from __future__ import print_function
 from __future__ import unicode_literals
