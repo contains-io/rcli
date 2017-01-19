@@ -11,6 +11,7 @@ Functions:
 from __future__ import unicode_literals
 
 import contextlib
+import os
 import random
 import string
 import subprocess
@@ -88,7 +89,7 @@ def create_project(tmpdir, id_):
 
 @pytest.fixture(scope='session')
 def run():
-    """Function factory to create subprocess wrappers functions.
+    """Function factory to create subprocess wrapper functions.
 
     Returns:
         A function that wraps subprocess.check_output, splits the input
@@ -104,10 +105,6 @@ def run():
         Returns:
             The output of the subprocess call decoded using the system
             encoding.
-
-        Raises:
-            CalledProcessError: Raised when the command returns a non-zero exit
-                code.
         """
         try:
             output = subprocess.check_output(
@@ -115,6 +112,29 @@ def run():
         except subprocess.CalledProcessError as e:
             output = e.output
         return output.decode(sys.stdout.encoding)
+    return _inner
+
+
+@pytest.fixture(scope='session')
+def cd():
+    """Function factory to create change directory context managers.
+
+    Returns:
+        A context manager that will temporarily change the current directory.
+    """
+    @contextlib.contextmanager
+    def _inner(newdir):
+        """Temporarily change the current directory.
+
+        Args:
+            newdir: The path for the new directory.
+        """
+        prevdir = os.getcwd()
+        os.chdir(os.path.expanduser(str(newdir)))
+        try:
+            yield
+        finally:
+            os.chdir(prevdir)
     return _inner
 
 
