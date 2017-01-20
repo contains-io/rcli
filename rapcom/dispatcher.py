@@ -13,7 +13,6 @@ import logging
 import os.path
 import re
 import sys
-import textwrap
 import types
 
 from docopt import docopt
@@ -58,6 +57,7 @@ def main():
         doc = _DEFAULT_DOC.format(message='')
     else:
         doc = _SUBCOMMANDS[None].__doc__
+    doc = _get_usage(doc)
     allow_subcommands = '<command>' in doc
     args = docopt(doc, version=dist_version, options_first=allow_subcommands)
     log_level = _get_log_level(args)
@@ -386,7 +386,7 @@ def _get_usage(doc):
         The docstring formatted to parse and display to the user. This includes
         dedenting, rewrapping, and translating the docstring if necessary.
     """
-    return textwrap.dedent(doc)
+    return inspect.cleandoc(doc)
 
 
 def _enable_logging(log_level, log_stream):

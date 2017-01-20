@@ -3,7 +3,7 @@
 
 from __future__ import unicode_literals
 
-import textwrap
+import inspect
 
 
 def test_func_command(create_project, run):
@@ -72,11 +72,11 @@ def test_multiple_commands(create_project, run):
 def test_custom_primary_command(create_project, run):
     """Test creating a command that overwrites the primary command."""
     usage = """
-            Usage: hello [--name <name>]
+        Usage: hello [--name <name>]
 
-            Options:
-                --name <name>  The name to print [default: world].
-            """
+        Options:
+            --name <name>  The name to print [default: world].
+        """
     with create_project('''
         def hello(name):
             """{usage}"""
@@ -84,8 +84,7 @@ def test_custom_primary_command(create_project, run):
     '''.format(usage=usage)):
         assert run('hello --name everyone') == 'Hello, everyone!\n'
         assert run('hello') == 'Hello, world!\n'
-        assert (textwrap.dedent(run('hello -h')).strip() ==
-                textwrap.dedent(usage).strip())
+        assert inspect.cleandoc(run('hello -h')) == inspect.cleandoc(usage)
 
 
 def test_primary_command_with_dispatch(create_project, run):
@@ -137,3 +136,17 @@ def test_subcommand_with_same_name(create_project, run):
     '''):
         assert run('say say') == 'Say!\n'
         assert run('say --log-level DEBUG say') == 'Say!\n'
+
+
+def test_dedent(create_project, run):
+    """Verify that usage strings are dedented correctly."""
+    usage = """Usage: say hello [--name <name>]
+
+            Options:
+                --name <name>  The name to print [default: world].
+            """
+    with create_project('''
+        def hello(name):
+            """{usage}"""
+    '''.format(usage=usage)):
+        assert run('say hello -h')[:-1] == inspect.cleandoc(usage)
