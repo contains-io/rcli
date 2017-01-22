@@ -256,7 +256,6 @@ def _run_command(argv):
     doc = _get_usage(subcommand.__doc__)
     args = _get_parsed_args(command_name, doc, argv)
     call = _get_callable(subcommand, args)
-    args = _validate(call, args)
     return call(**_normalize(call, args)) or 0
 
 
@@ -295,28 +294,6 @@ def _get_parsed_args(command_name, doc, argv):
     args = docopt(doc, argv=argv)
     if command_name == _COMMAND:
         args[command_name] = True
-    return args
-
-
-def _validate(call, args):
-    """Validate the arguments against the callable.
-
-    Args:
-        call: The subcommand callable object that may have a validate or schema
-            attribute.
-        args:
-            The resulting dictionary from the prior docopt parse.
-
-    Returns:
-        An updated version of the args dictionary that has been validated and
-        cast using the validate methods available on the callable.
-    """
-    has_schema = hasattr(call, 'schema') and hasattr(call.schema, 'validate')
-    if not hasattr(call, 'validate') and has_schema:
-        call.validate = call.schema.validate
-    if hasattr(call, 'validate'):
-        _LOGGER.debug('Validating command arguments with "%s".', call.validate)
-        args.update(call.validate(args))
     return args
 
 
