@@ -63,15 +63,17 @@ class Status(Exception):
 @contextlib.contextmanager
 def hidden_cursor():
     """Temporarily hide the terminal cursor."""
-    _LOGGER.debug('Hiding cursor.')
-    print('\x1B[?25l', end='')
-    sys.stdout.flush()
+    if sys.stdout.isatty():
+        _LOGGER.debug('Hiding cursor.')
+        print('\x1B[?25l', end='')
+        sys.stdout.flush()
     try:
         yield
     finally:
-        _LOGGER.debug('Showing cursor.')
-        print('\n\x1B[?25h', end='')
-        sys.stdout.flush()
+        if sys.stdout.isatty():
+            _LOGGER.debug('Showing cursor.')
+            print('\n\x1B[?25h', end='')
+            sys.stdout.flush()
 
 
 @contextlib.contextmanager
@@ -84,7 +86,8 @@ def display_status():
             msg: The message to display (e.g. OK or FAILED).
             color: The ANSI color code to use in displaying the message.
         """
-        print('\r{}{}[{color}{msg}{}]{}'.format(
+        print('\r' if sys.stdout.isatty() else '\t', end='')
+        print('{}{}[{color}{msg}{}]{}'.format(
             Cursor.FORWARD(_ncols() - 8),
             Style.BRIGHT,
             Fore.RESET,
@@ -126,7 +129,8 @@ def timed_display(msg):
                 header. This can be convenient for allowing the line to
                 overwrite another.
         """
-        print('\r', end=Style.BRIGHT + Fore.BLUE)
+        if sys.stdout.isatty():
+            print('\r', end=Style.BRIGHT + Fore.BLUE)
         print(' {} '.format(msg).center(_ncols(), '='),
               end='\n{}'.format(Style.RESET_ALL)
               if newline else Style.RESET_ALL)
@@ -138,7 +142,9 @@ def timed_display(msg):
         Args:
             msg: The message to display before running the task.
         """
-        print('\r{}'.format(msg), end='')
+        if sys.stdout.isatty():
+            print('\r', end='')
+        print(msg, end='')
         sys.stdout.flush()
 
     start = time.time()
@@ -162,7 +168,7 @@ def run_tasks(header, tasks):
     """
     tasks = list(tasks)
     with timed_display(header) as print_message:
-        with tqdm(tasks, position=1, desc='Progress',
+        with tqdm(tasks, position=1, desc='Progress', disable=None,
                   bar_format='{desc}{percentage:3.0f}% |{bar}|',
                   total=sum(t[2] if len(t) > 2 else 1 for t in tasks),
                   dynamic_ncols=True) as pbar:
@@ -181,6 +187,4 @@ def _ncols():
     Returns:
         The current number of columns in the terminal or 80 if there is no tty.
     """
-    if not sys.stdout.isatty():
-        return 80
-    return get_terminal_size().columns
+    return get_terminal_size().columns or 80

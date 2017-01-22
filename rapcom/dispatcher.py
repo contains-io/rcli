@@ -51,6 +51,7 @@ def main():
     If the command is 'help' then print the help message for the subcommand; if
     no subcommand is given, print the standard help message.
     """
+    colorama.init(wrap=six.PY3)
     _SUBCOMMANDS.update(_get_subcommands())
     dist_version = _get_dist_version()
     if None not in _SUBCOMMANDS:
