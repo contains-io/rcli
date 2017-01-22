@@ -64,11 +64,11 @@ def main():
     log_stream = six.StringIO()
     try:
         _enable_logging(log_level, log_stream)
+        default_args = sys.argv[2 if args.get('<command>') else 1:]
         if args.get('<command>') == 'help':
-            subcommand = next(iter(args.get('<args>')), None)
+            subcommand = next(iter(args.get('<args>', default_args)), None)
             return _help(subcommand)
         else:
-            default_args = sys.argv[2 if args.get('<command>') else 1:]
             argv = [args.get('<command>')] + args.get('<args>', default_args)
             return _run_command(argv)
     except exc.InvalidCliValueError as e:
@@ -363,7 +363,8 @@ def _help(command):
     if not command:
         doc = _DEFAULT_DOC.format(message='')
     elif command in ('-a', '--all'):
-        available_commands = [k for k in _SUBCOMMANDS.keys() if k] + ['help']
+        subcommands = [k for k in _SUBCOMMANDS.keys() if k is not None]
+        available_commands = subcommands + ['help']
         command_doc = '\nAvailable commands:\n{}\n'.format(
             '\n'.join('  {}'.format(c) for c in sorted(available_commands)))
         doc = _DEFAULT_DOC.format(message=command_doc)
