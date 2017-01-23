@@ -3,6 +3,7 @@
 
 from __future__ import unicode_literals
 
+import glob
 import re
 
 
@@ -32,7 +33,7 @@ def test_log_levels(create_project, run):
             ('WARNING', 'WARN'),
             ('ERROR', 'ERROR'),
         ]
-        assert _get_logs('say --d log') == expected_logs
+        assert _get_logs('say -d log') == expected_logs
         assert _get_logs('say --debug log') == expected_logs
         assert _get_logs('say --log-level DEBUG log') == expected_logs
         assert _get_logs('say -v log') == expected_logs[1:]
@@ -52,3 +53,25 @@ def test_invalid_log_level(create_project, run):
             'Invalid value "INVALID" supplied to --log-level. Valid '
             'options are: DEBUG, INFO, WARN, ERROR\n'
         )
+
+
+def test_exception_log(create_project, run, cd):
+    """Verify that a log file is written out in the case of an exception."""
+    with create_project('''
+        def nothing():
+            """usage: say nothing"""
+            raise RuntimeError
+
+        def error():
+            """usage: say error"""
+            raise RuntimeError('Error')
+    ''') as project:
+        with cd(project):
+            assert run('say nothing', stderr=True) == (
+                'Please see the log file for more information.\n'
+            )
+            assert run('say error', stderr=True) == (
+                'Error\n'
+                'Please see the log file for more information.\n'
+            )
+            assert glob.glob(str(project / r'say*.log'))
