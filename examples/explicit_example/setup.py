@@ -4,12 +4,12 @@ setup(
     name='explicit_example',
     version='1.0.0',
     packages=['explicit_example'],
-    install_requires=['rapcom'],
+    install_requires=['rcli'],
     entry_points={
         'console_scripts': [
-            'say = rapcom.dispatcher:main'
+            'say = rcli.dispatcher:main'
         ],
-        'rapcom': [
+        'rcli': [
             'say:hello = explicit_example:hello',
             'say:hiya = explicit_example:hiya'
         ]

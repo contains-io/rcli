@@ -1,23 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Install rapcom."""
+"""Install rcli."""
 
 from __future__ import unicode_literals
 
 from setuptools import setup
 from setuptools import find_packages
 
-import rapcom
+import rcli
 
 
 setup(
-    name='rapcom',
-    version=rapcom.__version__,
+    name='rcli',
+    version=rcli.__version__,
     description='A library for rapidly creating command-line tools.',
     long_description=open('README.rst').read(),
     author='Dangle Nuño',
     author_email='dangle@rooph.io',
-    url='https://github.com/containenv/rapcom',
+    url='https://github.com/containenv/rcli',
     keywords=['docopt', 'commands', 'subcommands', 'tooling', 'cli'],
     license='MIT',
     packages=find_packages(exclude=['tests', 'docs']),
@@ -32,7 +32,7 @@ setup(
     tests_require=['pytest >= 2.9'],
     entry_points={
         'distutils.setup_keywords': [
-            'autodetect_commands = rapcom.autodetect:setup_keyword'
+            'autodetect_commands = rcli.autodetect:setup_keyword'
         ]
     },
     classifiers=[

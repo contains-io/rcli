@@ -9,7 +9,7 @@ import sys
 
 import colorama
 
-import rapcom.display
+import rcli.display
 
 
 _CTRL_CHAR = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
@@ -19,7 +19,7 @@ def test_run_tasks(capsys):
     """Test that run tasks prints the expected messages."""
     with _colorama(strip=False), _force_tty():
         try:
-            rapcom.display.run_tasks(
+            rcli.display.run_tasks(
                 'Test Header',
                 [
                     ('Task 1', lambda: None),
@@ -50,7 +50,7 @@ def test_run_tasks_no_tty(capsys):
     """Test that run tasks prints the expected messages."""
     with _colorama():
         try:
-            rapcom.display.run_tasks(
+            rcli.display.run_tasks(
                 'Test Header',
                 [
                     ('Task 1', lambda: None),
@@ -89,7 +89,7 @@ def _error():
 
 def _custom_status():
     """Raise a custom status."""
-    raise rapcom.display.Status('CUSTOM', colorama.Fore.YELLOW)
+    raise rcli.display.Status('CUSTOM', colorama.Fore.YELLOW)
 
 
 @contextlib.contextmanager
