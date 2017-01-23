@@ -1,12 +1,12 @@
-rapcom
-======
+rcli
+====
 
 |PyPI| |Python Versions| |Build Status| |Coverage Status| |Code Quality|
 
 *Rapidly create full-featured command line interfaces with help, subcommand
 dispatch, and validation.*
 
-**rapcom** uses docopt_ to give you the control over your usage messages that you
+**rcli** uses docopt_ to give you the control over your usage messages that you
 want, but adds functionality such as automatic subcommand dispatching, usage
 string wrapping, internationalization, and parameter validation.
 
@@ -18,7 +18,7 @@ Install it using pip:
 
 ::
 
-    pip install rapcom
+    pip install rcli
 
 
 Features
@@ -38,7 +38,7 @@ Features
 Basic Usage
 -----------
 
-To use **rapcom**, add ``rapcom`` to your ``setup_requires`` argument in your
+To use **rcli**, add ``rcli`` to your ``setup_requires`` argument in your
 *setup.py* and set the ``autodetect_commands`` parameter to ``True``.
 
 .. code-block:: python
@@ -46,7 +46,7 @@ To use **rapcom**, add ``rapcom`` to your ``setup_requires`` argument in your
     from setuptools import setup
     setup(
         ...,
-        setup_requires=['rapcom'],
+        setup_requires=['rcli'],
         autodetect_commands=True,
         ...,
     )
@@ -111,13 +111,13 @@ message::
 .. _PEP 484: https://www.python.org/dev/peps/pep-0484/
 .. _docopt: http://docopt.org/
 
-.. |Build Status| image:: https://travis-ci.org/containenv/rapcom.svg?branch=development
-   :target: https://travis-ci.org/containenv/rapcom
-.. |Coverage Status| image:: https://coveralls.io/repos/github/containenv/rapcom/badge.svg?branch=development
-   :target: https://coveralls.io/github/containenv/rapcom?branch=development
-.. |PyPI| image:: https://img.shields.io/pypi/v/rapcom.svg
-   :target: https://pypi.python.org/pypi/rapcom/
-.. |Python Versions| image:: https://img.shields.io/pypi/pyversions/rapcom.svg
-   :target: https://pypi.python.org/pypi/rapcom/
+.. |Build Status| image:: https://travis-ci.org/containenv/rcli.svg?branch=development
+   :target: https://travis-ci.org/containenv/rcli
+.. |Coverage Status| image:: https://coveralls.io/repos/github/containenv/rcli/badge.svg?branch=development
+   :target: https://coveralls.io/github/containenv/rcli?branch=development
+.. |PyPI| image:: https://img.shields.io/pypi/v/rcli.svg
+   :target: https://pypi.python.org/pypi/rcli/
+.. |Python Versions| image:: https://img.shields.io/pypi/pyversions/rcli.svg
+   :target: https://pypi.python.org/pypi/rcli/
 .. |Code Quality| image:: https://api.codacy.com/project/badge/Grade/bfa6fff942654a27b4dc153e2876a111
-   :target: https://www.codacy.com/app/dangle/rapcom?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dangle/rapcom&amp;utm_campaign=Badge_Grade
+   :target: https://www.codacy.com/app/containenv/rcli?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dangle/rcli&amp;utm_campaign=Badge_Grade

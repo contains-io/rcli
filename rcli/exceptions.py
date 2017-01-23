@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Exceptions that can be raised by rapcom.
+"""Exceptions that can be raised by rcli.
 
 Classes:
-    RapcomError: The base exception for all exceptions used by rapcom.
+    RcliError: The base exception for all exceptions used by rcli.
     InvalidCliValueError: An exception that is used to tell the user of the
         CLI application that they have passed an invalid value to a parameter.
     InvalidLogLevelError: A subclass of InvalidCliValueError specifically for
@@ -10,12 +10,12 @@ Classes:
 """
 
 
-class RapcomError(Exception):
-    """An error detected in the use of rapcom."""
+class RcliError(Exception):
+    """An error detected in the use of rcli."""
 
 
-class InvalidCliValueError(RapcomError, ValueError):
-    """An error in a CLI error to a rapcom option."""
+class InvalidCliValueError(RcliError, ValueError):
+    """An error in a CLI error to a rcli option."""
 
     def __init__(self, parameter, value, valid_values=None):
         """Instantiate the exception with a descriptive message.

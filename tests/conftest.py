@@ -34,7 +34,7 @@ def create_project(tmpdir, id_):
     """
     @contextlib.contextmanager
     def _install_project(code, setup_keys=None, autodetect=True):
-        """Create a new Python project using rapcom.
+        """Create a new Python project using rcli.
 
         Generates a random name for the project and creates a setup.py file and
         a package with the same name as the project.
@@ -65,8 +65,7 @@ def create_project(tmpdir, id_):
                     name='{name}',
                     version='1.0.0',
                     packages=find_packages(),
-                    install_requires=['rapcom'],
-                    setup_requires=['rapcom'],
+                    setup_requires=['rcli'],
                     autodetect_commands={autodetect},
                     {keys}
                 )
