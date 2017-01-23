@@ -22,8 +22,8 @@ setup(
     license='MIT',
     packages=find_packages(exclude=['tests', 'docs']),
     install_requires=[
-        'colorama >= 0.3.7, < 0.4',
-        'tqdm >= 4.8.0, < 5',
+        'colorama >= 0.3.6, < 1',
+        'tqdm >= 4.9.0, < 5',
         'docopt >= 0.6.2, < 1',
         'six >= 1, < 2',
         'backports.shutil_get_terminal_size'
