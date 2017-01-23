@@ -34,7 +34,7 @@ Usage:
             <command> [<args>...]
 
 Options:
-  --help               Display this help message and exit.
+  -h, --help           Display this help message and exit.
   -V, --version        Display the version and exit.
   -d, --debug          Set the log level to DEBUG.
   -v, --verbose        Set the log level to INFO.

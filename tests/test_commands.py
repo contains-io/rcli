@@ -69,6 +69,28 @@ def test_multiple_commands(create_project, run):
         assert run('roar rawr') == 'RAWR!\n'
 
 
+def test_help(create_project, run):
+    """Test that the help subcommand responds as expected."""
+    help1 = 'usage: say help-1'
+    help2 = 'usage: say help-2'
+    with create_project('''
+        def help1():
+            """{}"""
+
+        def help2():
+            """{}"""
+    '''.format(help1, help2)):
+        commands_help = run('say help -a')
+        assert 'help-1' in commands_help
+        assert 'help-2' in commands_help
+        assert run('say help help-1')[:-1] == help1
+        assert run('say help-1 -h')[:-1] == help1
+        assert run('say help-1 --help')[:-1] == help1
+        assert run('say help help-2')[:-1] == help2
+        assert run('say help-2 -h')[:-1] == help2
+        assert run('say help-2 --help')[:-1] == help2
+
+
 def test_custom_primary_command(create_project, run):
     """Test creating a command that overwrites the primary command."""
     usage = """
