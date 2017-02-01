@@ -144,6 +144,7 @@ def timed_display(msg):
         """
         if sys.stdout.isatty():
             print('\r', end='')
+            msg = msg.ljust(_ncols())
         print(msg, end='')
         sys.stdout.flush()
 
