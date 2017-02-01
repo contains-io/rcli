@@ -172,3 +172,20 @@ def test_dedent(create_project, run):
             """{usage}"""
     '''.format(usage=usage)):
         assert run('say hello -h')[:-1] == inspect.cleandoc(usage)
+
+
+def test_multiline_usage(create_project, run):
+    """Verify that multiline usage strings are parsed correctly."""
+    usage = """Usage: say hello [--name <name>]
+                                [--again]
+
+            Options:
+                --name <name>  The name to print [default: world].
+                --again        Say it twice.
+            """
+    with create_project('''
+        def hello(name, again):
+            """{usage}"""
+    '''.format(usage=usage)):
+        assert 'hello' in run('say help -a')[:-1]
+        assert '[--again]' not in run('say help -a')[:-1]

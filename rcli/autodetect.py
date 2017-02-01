@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 
 import ast
 import collections
+import inspect
 import os.path
 import re
 import setuptools
@@ -88,7 +89,7 @@ def _append_commands(dct, commands):
             callable=(':{}'.format(command.callable)
                       if command.callable else ''),
         )
-        dct.setdefault(command.command, []).append(entry_point)
+        dct.setdefault(command.command, set()).add(entry_point)
 
 
 def _get_package_name(file_name):
@@ -198,8 +199,8 @@ def _parse_commands(docstring):
     except docopt.DocoptExit:
         pass
     match = _USAGE_PATTERN.findall(docstring)[0]
-    usage = match.strip()[6:]
-    usage_sections = [s.strip() for s in usage.split('\n')]
+    usage = inspect.cleandoc(match.strip()[6:])
+    usage_sections = [s.strip() for s in usage.split('\n') if s[:1].isalpha()]
     for section in usage_sections:
         args = section.split()
         command = args[0]
