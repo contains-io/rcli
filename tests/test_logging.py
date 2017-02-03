@@ -58,12 +58,16 @@ def test_invalid_log_level(create_project, run):
 def test_exception_log(create_project, run, cd):
     """Verify that a log file is written out in the case of an exception."""
     with create_project('''
+        import logging
+
         def nothing():
             """usage: say nothing"""
+            logging.debug('DEBUG')
             raise RuntimeError
 
         def error():
             """usage: say error"""
+            logging.debug('DEBUG')
             raise RuntimeError('Error')
     ''') as project:
         with cd(project):
@@ -74,4 +78,9 @@ def test_exception_log(create_project, run, cd):
                 'Error\n'
                 'Please see the log file for more information.\n'
             )
-            assert glob.glob(str(project / r'say*.log'))
+            logs = glob.glob(str(project / r'say*.log'))
+            for log in logs:
+                with open(log) as log_file:
+                    contents = log_file.read()
+                    assert 'DEBUG' in contents
+                    assert 'ERROR' in contents

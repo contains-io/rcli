@@ -137,10 +137,17 @@ def _normalize(func, cli_args):
     params = _get_signature(func if is_func else func.__call__)
     _LOGGER.debug('Found signature parameters: %s', params)
     args = {}
+    multi_args = set()
     for k, v in six.iteritems(cli_args):
         nk = _norm(k)
         if nk in params:
-            args[nk] = v
+            if nk not in args or args[nk] is None:
+                args[nk] = v
+            elif nk in multi_args and v is not None:
+                args[nk].append(v)
+            elif v is not None:
+                multi_args.add(nk)
+                args[nk] = [args[nk], v]
     _LOGGER.debug('Normalized "%s" to "%s".', cli_args, args)
     return args
 
@@ -382,7 +389,9 @@ def _enable_logging(log_level, log_stream):
             list of values.
     """
     root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
     stream_handler = logging.StreamHandler(log_stream)
+    stream_handler.setLevel(logging.DEBUG)
     stream_handler.setFormatter(logging.Formatter(
         '%(levelname)s [%(asctime)s][%(name)s] %(message)s'))
     root_logger.addHandler(stream_handler)
