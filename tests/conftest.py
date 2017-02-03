@@ -22,7 +22,7 @@ import pytest
 
 
 @pytest.fixture(scope='function')
-def create_project(tmpdir, id_):
+def create_project(tmpdir):
     """Function factory to create context managers that create python projects.
 
     Args:
@@ -53,7 +53,7 @@ def create_project(tmpdir, id_):
             A py.path.local object representing the newly created project
             folder.
         """
-        project_name = id_
+        project_name = id_()
         project = tmpdir.mkdir(project_name)
         setup = project.join('setup.py')
         setup.write(
@@ -82,7 +82,7 @@ def create_project(tmpdir, id_):
         try:
             yield project
         finally:
-            subprocess.check_call(['pip', 'uninstall', id_, '-y'])
+            subprocess.check_call(['pip', 'uninstall', project_name, '-y'])
     return _install_project
 
 
