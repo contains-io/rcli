@@ -389,7 +389,9 @@ def _enable_logging(log_level, log_stream):
             list of values.
     """
     root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
     stream_handler = logging.StreamHandler(log_stream)
+    stream_handler.setLevel(logging.DEBUG)
     stream_handler.setFormatter(logging.Formatter(
         '%(levelname)s [%(asctime)s][%(name)s] %(message)s'))
     root_logger.addHandler(stream_handler)
