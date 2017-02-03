@@ -46,6 +46,7 @@ To use **rcli**, add ``rcli`` to your ``setup_requires`` argument in your
     from setuptools import setup
     setup(
         ...,
+        install_requires=['rcli'],
         setup_requires=['rcli'],
         autodetect_commands=True,
         ...,
@@ -56,7 +57,7 @@ hint annotations for validation.
 
 .. code-block:: python
 
-    def repeat(message: str, num: int):
+    def repeat(message: str, num_times: int):
         """Usage: repeat <message> [--num-times <num>]
 
         Arguments:
@@ -65,7 +66,7 @@ hint annotations for validation.
         Options:
             -n, --num-times <num>  The number of times to print the message [default: 1].
         """
-        for i in range(num):
+        for i in range(num_times):
             print(message)
 
 Once your package is installed, a new console script *repeat* will be
