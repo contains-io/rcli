@@ -7,7 +7,6 @@ Functions:
 
 from __future__ import unicode_literals
 
-import datetime
 import inspect
 import logging
 import os.path
@@ -21,6 +20,7 @@ import pkg_resources
 import six
 
 from . import exceptions as exc
+from . import log
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -61,10 +61,8 @@ def main():
     doc = _get_usage(doc)
     allow_subcommands = '<command>' in doc
     args = docopt(doc, version=dist_version, options_first=allow_subcommands)
-    log_level = _get_log_level(args)
-    log_stream = six.StringIO()
     try:
-        _enable_logging(log_level, log_stream)
+        log.enable_logging(log.get_log_level(args))
         default_args = sys.argv[2 if args.get('<command>') else 1:]
         if args.get('<command>') == 'help':
             subcommand = next(iter(args.get('<args>', default_args)), None)
@@ -77,33 +75,8 @@ def main():
     except (KeyboardInterrupt, EOFError):
         return "Cancelling at the user's request."
     except Exception as e:  # pylint: disable=broad-except
-        return _handle_unexpected_exception(e, log_stream)
-
-
-def _handle_unexpected_exception(exc, log_stream):
-    """Return an error message and write a log file if logging was not enabled.
-
-    Args:
-        exc: The unexpected exception.
-        log_stream: The accumulated log data to write to a file if logging was
-            not explicitly enabled.
-
-    Returns:
-        A message to display to the user concerning the unexpected exception.
-    """
-    _LOGGER.exception('An unexpected error has occurred.')
-    msg = str(exc)
-    if msg:
-        msg += '\n'
-    try:
-        now = datetime.datetime.now().strftime('%Y%m%d-%H%M%S.%f')
-        filename = '{}-{}.log'.format(_COMMAND, now)
-        with open(filename, 'w') as log_file:
-            log_file.write(log_stream.getvalue())
-        msg += 'Please see the log file for more information.'
-    except IOError:
-        msg += 'Unable to write log file.'
-    return msg
+        _LOGGER.exception('An unexpected error has occurred.')
+        return log.handle_unexpected_exception(e)
 
 
 def _normalize(func, cli_args):
@@ -372,105 +345,3 @@ def _get_usage(doc):
         dedenting, rewrapping, and translating the docstring if necessary.
     """
     return inspect.cleandoc(doc)
-
-
-def _enable_logging(log_level, log_stream):
-    """Set the root logger to the given log level and add a color formatter.
-
-    Args:
-        log_level: The logging level to set the root logger. Must be None,
-            "DEBUG", "INFO", "WARN", or "ERROR".
-        log_stream: A stream object to write logs to in addition to stderr.
-            This is to be used to save the logs in the case of an unexpected
-            exception.
-
-    Raises:
-        ValueError: Raised if the given log level is not in the acceptable
-            list of values.
-    """
-    root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
-    stream_handler = logging.StreamHandler(log_stream)
-    stream_handler.setLevel(logging.DEBUG)
-    stream_handler.setFormatter(logging.Formatter(
-        '%(levelname)s [%(asctime)s][%(name)s] %(message)s'))
-    root_logger.addHandler(stream_handler)
-    if log_level not in (None, 'DEBUG', 'INFO', 'WARN', 'ERROR'):
-        raise exc.InvalidLogLevelError(log_level)
-    if log_level:
-        handler = logging.StreamHandler()
-        handler.setFormatter(_LogColorFormatter())
-        level = getattr(logging, log_level)
-        root_logger.setLevel(level)
-        root_logger.addHandler(handler)
-
-
-def _get_log_level(args):
-    """Get the log level from the CLI arguments.
-
-    Removes logging arguments from sys.argv.
-
-    Args:
-        args: The parsed docopt arguments to be used to determine the logging
-            level.
-
-    Returns:
-        The correct log level based on the three CLI arguments given.
-    """
-    index = -1
-    log_level = None
-    if '<command>' in args and args['<command>']:
-        index = sys.argv.index(args['<command>'])
-    if args.get('--debug'):
-        log_level = 'DEBUG'
-        if '--debug' in sys.argv and sys.argv.index('--debug') < index:
-            sys.argv.remove('--debug')
-        elif '-d' in sys.argv and sys.argv.index('-d') < index:
-            sys.argv.remove('-d')
-    elif args.get('--verbose'):
-        log_level = 'INFO'
-        if '--verbose' in sys.argv and sys.argv.index('--verbose') < index:
-            sys.argv.remove('--verbose')
-        elif '-v' in sys.argv and sys.argv.index('-v') < index:
-            sys.argv.remove('-v')
-    elif args.get('--log-level'):
-        log_level = args['--log-level']
-        sys.argv.remove('--log-level')
-        sys.argv.remove(log_level)
-    return log_level
-
-
-class _LogColorFormatter(logging.Formatter):
-    """A colored logging.Formatter implementation."""
-
-    def format(self, record):
-        """Format the log record with timestamps and level based colors.
-
-        Args:
-            record: The log record to format.
-
-        Returns:
-            The formatted log record.
-        """
-        if record.levelno >= logging.ERROR:
-            color = colorama.Fore.RED
-        elif record.levelno >= logging.WARNING:
-            color = colorama.Fore.YELLOW
-        elif record.levelno >= logging.INFO:
-            color = colorama.Fore.RESET
-        else:
-            color = colorama.Fore.CYAN
-        format_template = (
-            '{}{}%(levelname)s{} [%(asctime)s][%(name)s]{} %(message)s')
-        if sys.stdout.isatty():
-            self._fmt = format_template.format(
-                colorama.Style.BRIGHT,
-                color,
-                colorama.Fore.RESET,
-                colorama.Style.RESET_ALL
-            )
-        else:
-            self._fmt = format_template.format(*[''] * 4)
-        if six.PY3:
-            self._style._fmt = self._fmt  # pylint: disable=protected-access
-        return super(_LogColorFormatter, self).format(record)
