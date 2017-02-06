@@ -2,7 +2,7 @@
 """Utilities for handling global logging state.
 
 Functions:
-    write_log_file: Write the current contents of the DEBUG log to a file.
+    write_logfile: Write the current contents of the DEBUG log to a file.
     handle_unexpected_exception: Log and append the exception message with a
         message indicating that logging occurred.
     enable_logging: Configures logging handlers and formatters.
@@ -10,11 +10,13 @@ Functions:
         log level passed in by the user on the command line.
 """
 
+from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
 import logging
 import os.path
+import signal
 import sys
 
 import colorama
@@ -22,16 +24,17 @@ import six
 
 from . import exceptions as exc
 
+
 _LOGFILE_STREAM = six.StringIO()
 
 
-def write_log_file():
-    """Write a DEBUG log file."""
+def write_logfile():
+    """Write a DEBUG log file COMMAND-YYYYMMDD-HHMMSS.ffffff.log."""
     command = os.path.basename(os.path.realpath(os.path.abspath(sys.argv[0])))
     now = datetime.datetime.now().strftime('%Y%m%d-%H%M%S.%f')
     filename = '{}-{}.log'.format(command, now)
-    with open(filename, 'w') as log_file:
-        log_file.write(_LOGFILE_STREAM.getvalue())
+    with open(filename, 'w') as logfile:
+        logfile.write(_LOGFILE_STREAM.getvalue())
 
 
 def handle_unexpected_exception(exc):
@@ -47,7 +50,7 @@ def handle_unexpected_exception(exc):
     if msg:
         msg += '\n'
     try:
-        write_log_file()
+        write_logfile()
         msg += 'Please see the log file for more information.'
     except IOError:
         msg += 'Unable to write log file.'
@@ -67,6 +70,8 @@ def enable_logging(log_level):
     logfile_handler.setFormatter(logging.Formatter(
         '%(levelname)s [%(asctime)s][%(name)s] %(message)s'))
     root_logger.addHandler(logfile_handler)
+    if signal.getsignal(signal.SIGTERM) == signal.SIG_DFL:
+        signal.signal(signal.SIGTERM, _logfile_sigterm_handler)
     if log_level:
         handler = logging.StreamHandler()
         handler.setFormatter(_LogColorFormatter())
@@ -113,6 +118,19 @@ def get_log_level(args):
     if log_level not in (None, 'DEBUG', 'INFO', 'WARN', 'ERROR'):
         raise exc.InvalidLogLevelError(log_level)
     return getattr(logging, log_level) if log_level else None
+
+
+def _logfile_sigterm_handler(*_):
+    """Handle exit signals and write out a log file.
+
+    Raises:
+        SystemExit: Contains the signal as the return code.
+    """
+    logging.error('Received SIGTERM.')
+    write_logfile()
+    print('Received signal. Please see the log file for more information.',
+          file=sys.stderr)
+    sys.exit(signal)
 
 
 class _LogColorFormatter(logging.Formatter):

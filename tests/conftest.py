@@ -13,6 +13,7 @@ from __future__ import unicode_literals
 import contextlib
 import os
 import random
+import shlex
 import string
 import subprocess
 import sys
@@ -79,9 +80,12 @@ def create_project(tmpdir):
         project.mkdir(project_name).join('__init__.py').write(textwrap.dedent(
             code))
         subprocess.check_call(['pip', 'install', str(project)])
+        prevdir = os.getcwd()
+        os.chdir(os.path.expanduser(str(project)))
         try:
             yield project
         finally:
+            os.chdir(prevdir)
             subprocess.check_call(['pip', 'uninstall', project_name, '-y'])
     return _install_project
 
@@ -107,33 +111,11 @@ def run():
         """
         try:
             output = subprocess.check_output(
-                command.split(), stderr=subprocess.STDOUT if stderr else None)
+                shlex.split(command),
+                stderr=subprocess.STDOUT if stderr else None)
         except subprocess.CalledProcessError as e:
             output = e.output
         return output.decode(sys.stdout.encoding)
-    return _inner
-
-
-@pytest.fixture(scope='session')
-def cd():
-    """Function factory to create change directory context managers.
-
-    Returns:
-        A context manager that will temporarily change the current directory.
-    """
-    @contextlib.contextmanager
-    def _inner(newdir):
-        """Temporarily change the current directory.
-
-        Args:
-            newdir: The path for the new directory.
-        """
-        prevdir = os.getcwd()
-        os.chdir(os.path.expanduser(str(newdir)))
-        try:
-            yield
-        finally:
-            os.chdir(prevdir)
     return _inner
 
 
