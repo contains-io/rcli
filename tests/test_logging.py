@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 
 import glob
 import re
+import subprocess
+import time
 
 
 _CTRL_CHAR = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
@@ -55,7 +57,7 @@ def test_invalid_log_level(create_project, run):
         )
 
 
-def test_exception_log(create_project, run, cd):
+def test_exception_log(create_project, run):
     """Verify that a log file is written out in the case of an exception."""
     with create_project('''
         import logging
@@ -70,17 +72,75 @@ def test_exception_log(create_project, run, cd):
             logging.debug('DEBUG')
             raise RuntimeError('Error')
     ''') as project:
-        with cd(project):
-            assert run('say nothing', stderr=True) == (
-                'Please see the log file for more information.\n'
-            )
-            assert run('say error', stderr=True) == (
-                'Error\n'
-                'Please see the log file for more information.\n'
-            )
-            logs = glob.glob(str(project / r'say*.log'))
-            for log in logs:
-                with open(log) as log_file:
-                    contents = log_file.read()
-                    assert 'DEBUG' in contents
-                    assert 'ERROR' in contents
+        assert run('say nothing', stderr=True) == (
+            'Please see the log file for more information.\n'
+        )
+        assert run('say error', stderr=True) == (
+            'Error\n'
+            'Please see the log file for more information.\n'
+        )
+        logs = glob.glob(str(project / r'say*.log'))
+        assert logs
+        for log in logs:
+            with open(log) as log_file:
+                contents = log_file.read()
+                assert 'DEBUG' in contents
+                assert 'ERROR' in contents
+
+
+def test_sigterm_log(create_project):
+    """Test that a log file is generated when a SIGTERM is received."""
+    with create_project('''
+        import sys
+        import time
+
+        def nothing():
+            """usage: say nothing"""
+            print('ready')
+            sys.stdout.flush()
+            while 1:
+                time.sleep(1)
+    ''') as project:
+        process = subprocess.Popen(
+            ['say', 'nothing'], stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, universal_newlines=True)
+        end = time.time() + 30
+        while 'ready' not in process.stdout.read(5) and time.time() < end:
+            pass
+        process.terminate()
+        assert process.wait()
+        logs = glob.glob(str(project / r'say*.log'))
+        assert logs
+        for log in logs:
+            with open(log) as log_file:
+                contents = log_file.read()
+                assert 'DEBUG' in contents
+                assert 'ERROR' in contents
+
+
+def test_sigterm_no_log(create_project):
+    """Test that a log file is not generated when a SIGTERM handler exists."""
+    with create_project('''
+        import signal
+        import sys
+        import time
+
+        signal.signal(signal.SIGTERM, lambda *_: sys.exit(signal.SIGTERM))
+
+        def nothing():
+            """usage: say nothing"""
+            print('ready')
+            sys.stdout.flush()
+            while 1:
+                time.sleep(1)
+    ''') as project:
+        process = subprocess.Popen(
+            ['say', 'nothing'], stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, universal_newlines=True)
+        end = time.time() + 30
+        while 'ready' not in process.stdout.read(5) and time.time() < end:
+            pass
+        process.terminate()
+        assert process.wait()
+        logs = glob.glob(str(project / r'say*.log'))
+        assert not logs
