@@ -94,16 +94,6 @@ def _normalize(func, cli_args):
         CLI arguments contains values that the function will not accept, those
         keys will not be returned.
     """
-    def _norm(k):
-        """Normalize a single key."""
-        if k.startswith('--'):
-            k = k[2:]
-        if k.startswith('-'):
-            k = k[1:]
-        if k.startswith('<') and k.endswith('>'):
-            k = k[1:-1]
-        return k.lower().replace('-', '_')
-
     assert hasattr(func, '__call__'), (
         'Cannot normalize parameters of a non-callable.')
     is_func = isinstance(func, types.FunctionType)
@@ -112,7 +102,7 @@ def _normalize(func, cli_args):
     args = {}
     multi_args = set()
     for k, v in six.iteritems(cli_args):
-        nk = _norm(k)
+        nk = re.sub(r'\W|^(?=\d)', '_', k).strip('_').lower()
         if nk in params:
             if nk not in args or args[nk] is None:
                 args[nk] = v
