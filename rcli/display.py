@@ -32,7 +32,7 @@ from colorama import Style
 from tqdm import tqdm
 
 try:
-    from shutils import get_terminal_size
+    from shutil import get_terminal_size
 except ImportError:
     from backports.shutil_get_terminal_size import get_terminal_size
 

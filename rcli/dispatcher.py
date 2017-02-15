@@ -9,25 +9,22 @@ from __future__ import unicode_literals
 
 import inspect
 import logging
-import os.path
 import re
 import sys
 import types
 
 from docopt import docopt
 import colorama
-import pkg_resources
 import six
 
 from . import exceptions as exc
 from . import log
+from .config import settings
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
-_COMMAND = os.path.basename(os.path.realpath(os.path.abspath(sys.argv[0])))
-_SUBCOMMANDS = {}
 _DEFAULT_DOC = """
 Usage:
   {command} [--help] [--version] [--log-level <level> | --debug | --verbose]
@@ -42,7 +39,7 @@ Options:
 {{message}}
 '{command} help -a' lists all available subcommands.
 See '{command} help <command>' for more information on a specific command.
-""".format(command=_COMMAND)
+""".format(command=settings.command)
 
 
 def main():
@@ -52,15 +49,15 @@ def main():
     no subcommand is given, print the standard help message.
     """
     colorama.init(wrap=six.PY3)
-    _SUBCOMMANDS.update(_get_subcommands())
-    dist_version = _get_dist_version()
-    if None not in _SUBCOMMANDS:
-        doc = _DEFAULT_DOC.format(message='')
+    if None not in settings.subcommands:
+        msg = '\n{}\n'.format(settings.message) if settings.message else ''
+        doc = _DEFAULT_DOC.format(message=msg)
     else:
-        doc = _SUBCOMMANDS[None].__doc__
+        doc = settings.subcommands[None].__doc__
     doc = _get_usage(doc)
     allow_subcommands = '<command>' in doc
-    args = docopt(doc, version=dist_version, options_first=allow_subcommands)
+    args = docopt(doc, version=settings.version,
+                  options_first=allow_subcommands)
     try:
         log.enable_logging(log.get_log_level(args))
         default_args = sys.argv[2 if args.get('<command>') else 1:]
@@ -71,7 +68,7 @@ def main():
             argv = [args.get('<command>')] + args.get('<args>', default_args)
             return _run_command(argv)
     except exc.InvalidCliValueError as e:
-        return e
+        return str(e)
     except (KeyboardInterrupt, EOFError):
         return "Cancelling at the user's request."
     except Exception as e:  # pylint: disable=broad-except
@@ -137,38 +134,6 @@ def _get_signature(func):
     return sig
 
 
-def _get_entry_point():
-    """Return the currently active entry point."""
-    mod_name = sys.modules[__name__].__name__
-    for ep in pkg_resources.iter_entry_points(group='console_scripts'):
-        if ep.name == _COMMAND and ep.module_name == mod_name:
-            return ep
-
-
-def _get_dist_version():
-    """Return the version of the distribution that created this entry point."""
-    entry_point = _get_entry_point()
-    if entry_point and hasattr(entry_point.dist, 'version'):
-        return str(entry_point.dist)
-
-
-def _get_subcommands():
-    """Return all subcommands for the current command."""
-    regex = re.compile(r'{}:(?P<name>[^:]+)$'.format(_COMMAND))
-    subcommands = {}
-    for ep in pkg_resources.iter_entry_points(group='rcli'):
-        try:
-            if ep.name == _COMMAND:
-                subcommands[None] = ep.load()
-            else:
-                match = re.match(regex, ep.name)
-                if match:
-                    subcommands[match.group('name')] = ep.load()
-        except ImportError:
-            _LOGGER.exception('Unable to load command. Skipping.')
-    return subcommands
-
-
 def _get_subcommand(name):
     """Return the function for the specified subcommand.
 
@@ -179,13 +144,13 @@ def _get_subcommand(name):
         The loadable object from the entry point represented by the subcommand.
     """
     _LOGGER.debug('Accessing subcommand "%s".', name)
-    if name not in _SUBCOMMANDS:
+    if name not in settings.subcommands:
         raise ValueError(
             '"{subcommand}" is not a {command} command. \'{command} help -a\' '
             'lists all available subcommands.'.format(
-                command=_COMMAND, subcommand=name)
+                command=settings.command, subcommand=name)
         )
-    return _SUBCOMMANDS[name]
+    return settings.subcommands[name]
 
 
 def _get_callable(subcommand, args):
@@ -248,7 +213,7 @@ def _run_command(argv):
         ValueError: Raised if the user attempted to run an invalid command.
     """
     command_name, argv = _get_command_and_argv(argv)
-    _LOGGER.info('Running command "%s %s" with args: %s', _COMMAND,
+    _LOGGER.info('Running command "%s %s" with args: %s', settings.command,
                  command_name, argv)
     subcommand = _get_subcommand(command_name)
     doc = _get_usage(subcommand.__doc__)
@@ -270,7 +235,7 @@ def _get_command_and_argv(argv):
     command_name = argv[0]
     if not command_name:
         argv = argv[1:]
-    elif command_name == _COMMAND:
+    elif command_name == settings.command:
         argv.remove(command_name)
     return command_name, argv
 
@@ -290,7 +255,7 @@ def _get_parsed_args(command_name, doc, argv):
     """
     _LOGGER.debug('Parsing docstring: """%s""" with arguments %s.', doc, argv)
     args = docopt(doc, argv=argv)
-    if command_name == _COMMAND:
+    if command_name == settings.command:
         args[command_name] = True
     return args
 
@@ -311,7 +276,7 @@ def _help(command):
     if not command:
         doc = _DEFAULT_DOC.format(message='')
     elif command in ('-a', '--all'):
-        subcommands = [k for k in _SUBCOMMANDS.keys() if k is not None]
+        subcommands = [k for k in settings.subcommands.keys() if k is not None]
         available_commands = subcommands + ['help']
         command_doc = '\nAvailable commands:\n{}\n'.format(
             '\n'.join('  {}'.format(c) for c in sorted(available_commands)))

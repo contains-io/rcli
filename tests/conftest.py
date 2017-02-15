@@ -11,6 +11,7 @@ Functions:
 from __future__ import unicode_literals
 
 import contextlib
+import inspect
 import os
 import random
 import shlex
@@ -34,7 +35,7 @@ def create_project(tmpdir):
         the initial package code for a command program.
     """
     @contextlib.contextmanager
-    def _install_project(code, setup_keys=None, autodetect=True):
+    def _install_project(code, setupcfg=None):
         """Create a new Python project using rcli.
 
         Generates a random name for the project and creates a setup.py file and
@@ -45,10 +46,6 @@ def create_project(tmpdir):
 
         Args:
             code: The code for the __init__.py module. It will be dedented.
-            setup_keys: A string that will be added to the setup call in
-                setup.py.
-            autodetect: Whether or not to run command autodetection on the
-                newly created project at setup.
 
         Returns:
             A py.path.local object representing the newly created project
@@ -56,6 +53,8 @@ def create_project(tmpdir):
         """
         project_name = id_()
         project = tmpdir.mkdir(project_name)
+        if setupcfg:
+            project.join('setup.cfg').write(inspect.cleandoc(setupcfg))
         setup = project.join('setup.py')
         setup.write(
             textwrap.dedent(
@@ -66,27 +65,23 @@ def create_project(tmpdir):
                     name='{name}',
                     version='1.0.0',
                     packages=find_packages(),
+                    install_requires=['rcli'],
                     setup_requires=['rcli'],
-                    autodetect_commands={autodetect},
-                    {keys}
+                    autodetect_commands=True
                 )
-                """.format(
-                    name=project_name,
-                    autodetect=autodetect,
-                    keys=setup_keys or ''
-                )
+                """.format(name=project_name)
             )
         )
         project.mkdir(project_name).join('__init__.py').write(textwrap.dedent(
             code))
-        subprocess.check_call(['pip', 'install', str(project)])
         prevdir = os.getcwd()
         os.chdir(os.path.expanduser(str(project)))
+        subprocess.check_call(['pip', 'install', '.'])
         try:
             yield project
         finally:
+            subprocess.call(['pip', 'uninstall', project_name, '-y'])
             os.chdir(prevdir)
-            subprocess.check_call(['pip', 'uninstall', project_name, '-y'])
     return _install_project
 
 
