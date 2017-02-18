@@ -22,6 +22,9 @@ install_requires = [
 if sys.version_info < (3, 3):
     install_requires.append('backports.shutil_get_terminal_size')
 
+if sys.version_info < (3, 5):
+    install_requires.append('typing >= 3.5.3')
+
 setup(
     name='rcli',
     version=rcli.__version__,

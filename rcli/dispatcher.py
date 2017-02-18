@@ -195,14 +195,6 @@ def _run_command(argv):
     Command functions are expected to have a __doc__ string that is parseable
     by docopt.
 
-    If the function object has a 'validate' attribute, the
-    arguments passed to the command will be validated before the command is
-    called.
-
-    If the function object has a 'schema' attribute, but not a 'validate'
-    attribute, and the 'schema' attribute has a 'validate' attribute, the
-    schema validate method will be called for validation.
-
     Args:
         argv: The list of command line arguments supplied for a command. The
             first argument is expected to be the name of the command to be run.
