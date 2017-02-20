@@ -1,14 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Install rcli."""
+"""Install rcli and rcli distutils extensions."""
 
 from __future__ import unicode_literals
+
+import sys
 
 from setuptools import setup
 from setuptools import find_packages
 
 import rcli
 
+
+install_requires = [
+    'colorama >= 0.3.6, < 1',
+    'tqdm >= 4.9.0, < 5',
+    'docopt >= 0.6.2, < 1',
+    'six >= 1, < 2'
+]
+
+if sys.version_info < (3, 3):
+    install_requires.append('backports.shutil_get_terminal_size')
 
 setup(
     name='rcli',
@@ -21,18 +33,15 @@ setup(
     keywords=['docopt', 'commands', 'subcommands', 'tooling', 'cli'],
     license='MIT',
     packages=find_packages(exclude=['tests', 'docs']),
-    install_requires=[
-        'colorama >= 0.3.6, < 1',
-        'tqdm >= 4.9.0, < 5',
-        'docopt >= 0.6.2, < 1',
-        'six >= 1, < 2',
-        'backports.shutil_get_terminal_size'
-    ],
+    install_requires=install_requires,
     setup_requires=['pytest-runner'],
     tests_require=['pytest >= 2.9'],
     entry_points={
         'distutils.setup_keywords': [
             'autodetect_commands = rcli.autodetect:setup_keyword'
+        ],
+        'egg_info.writers': [
+            'rcli-config.json = rcli.autodetect:egg_info_writer'
         ]
     },
     classifiers=[

@@ -3,19 +3,26 @@
 
 Functions:
     setup_keyword: Adds a keyword to setuptools.setup to autodetect commands.
+    egg_info_writer: Reads configuration from setup.cfg and writes out a new
+        egg info file.
 """
 
 from __future__ import unicode_literals
 
 import ast
 import collections
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import ConfigParser
 import inspect
+import json
 import os.path
 import re
-import setuptools
-import six
 
 import docopt
+import setuptools
+import six
 
 
 _EntryPoint = collections.namedtuple(  # All data representing an entry point.
@@ -45,6 +52,36 @@ def setup_keyword(dist, _, value):
             '{command} = rcli.dispatcher:main'.format(command=command)
         )
         dist.entry_points.setdefault('rcli', []).extend(subcommands)
+
+
+def egg_info_writer(cmd, basename, filename):
+    """Read rcli configuration and write it out to the egg info.
+
+    Args:
+        cmd: An egg info command instance to use for writing.
+        basename: The basename of the file to write.
+        filename: The full path of the file to write into the egg info.
+    """
+    setupcfg = next((f for f in setuptools.findall()
+                     if os.path.basename(f) == 'setup.cfg'), None)
+    if not setupcfg:
+        return
+    parser = ConfigParser()
+    parser.read(setupcfg)
+    if not parser.has_section('rcli') or not parser.items('rcli'):
+        return
+    config = dict(parser.items('rcli'))
+    for k, v in six.iteritems(config):
+        if v.lower() in ('y', 'yes', 'true'):
+            config[k] = True
+        elif v.lower() in ('n', 'no', 'false'):
+            config[k] = False
+        else:
+            try:
+                config[k] = json.loads(v)
+            except ValueError:
+                pass
+    cmd.write_file(basename, filename, json.dumps(config))
 
 
 def _get_commands(dist):
