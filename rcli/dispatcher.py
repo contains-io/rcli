@@ -9,9 +9,7 @@ from __future__ import unicode_literals
 
 import inspect
 import logging
-import re
 import sys
-import types
 
 from docopt import docopt
 import colorama
@@ -19,6 +17,7 @@ import six
 
 from . import exceptions as exc
 from . import log
+from . import call
 from .config import settings
 
 
@@ -76,64 +75,6 @@ def main():
         return log.handle_unexpected_exception(e)
 
 
-def _normalize(func, cli_args):
-    """Alter the docopt args to be valid python names for func.
-
-    Returns a dictionary based on cli_args that uses normalized keys. Keys are
-    normalized to valid python names.
-
-    Args:
-        func: The function being called to run the command.
-        cli_args: The parsed results of docopt for the given command.
-
-    Returns:
-        A dictionary containing normalized keys from the CLI arguments. If the
-        CLI arguments contains values that the function will not accept, those
-        keys will not be returned.
-    """
-    assert hasattr(func, '__call__'), (
-        'Cannot normalize parameters of a non-callable.')
-    is_func = isinstance(func, types.FunctionType)
-    params = _get_signature(func if is_func else func.__call__)
-    _LOGGER.debug('Found signature parameters: %s', params)
-    args = {}
-    multi_args = set()
-    for k, v in six.iteritems(cli_args):
-        nk = re.sub(r'\W|^(?=\d)', '_', k).strip('_').lower()
-        if nk in params:
-            if nk not in args or args[nk] is None:
-                args[nk] = v
-            elif nk in multi_args and v is not None:
-                args[nk].append(v)
-            elif v is not None:
-                multi_args.add(nk)
-                args[nk] = [args[nk], v]
-    _LOGGER.debug('Normalized "%s" to "%s".', cli_args, args)
-    return args
-
-
-def _get_signature(func):
-    """Return the signature of the given function.
-
-    inspect.getargspec() no longer exists as of Python 3.6, so detect the
-    correct method of accessing the signature for each language and return the
-    list of argument names.
-
-    Args:
-        func: The function from which to retrieve parameter names.
-
-    Returns:
-        A list of valid parameter names for the given function.
-    """
-    if six.PY3:
-        return [p.name for p in inspect.signature(func).parameters.values()
-                if p.kind == p.POSITIONAL_OR_KEYWORD]
-    sig = inspect.getargspec(func).args  # pylint: disable=deprecated-method
-    if six.PY2 and isinstance(func, types.MethodType):
-        sig = sig[1:]
-    return sig
-
-
 def _get_subcommand(name):
     """Return the function for the specified subcommand.
 
@@ -151,42 +92,6 @@ def _get_subcommand(name):
                 command=settings.command, subcommand=name)
         )
     return settings.subcommands[name]
-
-
-def _get_callable(subcommand, args):
-    """Return a callable object from the subcommand.
-
-    Args:
-        subcommand: A object loaded from an entry point. May be a module,
-            class, or function.
-        args: The list of arguments parsed by docopt, before normalization.
-            These are passed to the init method of any class-based callable
-            objects being returned.
-
-    Returns:
-        The callable entry point for the subcommand. If the subcommand is a
-        function, it will be returned unchanged. If the subcommand is a module
-        or a class, an instance of the command class will be returned.
-
-    Raises:
-        AssertionError: Raised when a module entry point does not have a
-            callable class named Command.
-    """
-    _LOGGER.debug(
-        'Creating callable from subcommand "%s" with command line arguments: '
-        '%s', subcommand.__name__, args)
-    if isinstance(subcommand, types.ModuleType):
-        _LOGGER.debug('Subcommand is a module.')
-        assert hasattr(subcommand, 'Command'), (
-            'Module subcommand must have callable "Command" class definition.')
-        subcommand = subcommand.Command
-    if any(isinstance(subcommand, t) for t in six.class_types):
-        try:
-            return subcommand(**args)
-        except TypeError:
-            _LOGGER.debug('Subcommand does not take arguments.')
-            return subcommand()
-    return subcommand
 
 
 def _run_command(argv):
@@ -208,10 +113,10 @@ def _run_command(argv):
     _LOGGER.info('Running command "%s %s" with args: %s', settings.command,
                  command_name, argv)
     subcommand = _get_subcommand(command_name)
+    func = call.get_callable(subcommand)
     doc = _get_usage(subcommand.__doc__)
     args = _get_parsed_args(command_name, doc, argv)
-    call = _get_callable(subcommand, args)
-    return call(**_normalize(call, args)) or 0
+    return call.call(func, args) or 0
 
 
 def _get_command_and_argv(argv):
