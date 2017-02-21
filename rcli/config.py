@@ -4,8 +4,12 @@
 Functions:
     settings: An object that contains all information related to the current
         command and configuration of rcli.
+
+Classes:
+    RcliEntryPoint: The allowed entry point types for subcommands.
 """
 
+from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import copy
@@ -14,38 +18,35 @@ import json
 import os.path
 import re
 import sys
+import types
+import typing
 
 import pkg_resources
+import setuptools  # noqa: F401 pylint: disable=unused-import
 import six
+
+from .typing import Singleton
 
 
 _LOGGER = logging.getLogger(__name__)
 
-
-class _Singleton(type):
-    """A metaclass to turn a class into a singleton."""
-
-    __instance__ = None
-
-    def __call__(cls, *args, **kwargs):
-        """Instantiate the class only once."""
-        if not cls.__instance__:
-            cls.__instance__ = super(_Singleton, cls).__call__(*args, **kwargs)
-        return cls.__instance__
+RcliEntryPoint = typing.Union[types.FunctionType, type, types.ModuleType]
 
 
-@six.add_metaclass(_Singleton)
+@six.add_metaclass(Singleton)
 class _RcliConfig(object):
     """A global settings object for the command and the configuration."""
 
     _EP_MOD_NAME = 'rcli.dispatcher'  # The console script entry point module.
 
     def __init__(self):
-        self._command = None
-        self._subcommands = {}
-        self._version = None
-        self._entry_point = None
-        self._config = {}
+        # type: () -> None
+        """Initialize the data for the configuration."""
+        self._command = None  # type: str
+        self._subcommands = {}  # type: typing.Dict[str, RcliEntryPoint]
+        self._version = None  # type: str
+        self._entry_point = None  # type: pkg_resources.EntryPoint
+        self._config = {}  # type: typing.Dict[str, typing.Any]
         if (self.distribution and
                 self.distribution.has_metadata('rcli-config.json')):
             data = self.distribution.get_metadata('rcli-config.json')
@@ -53,6 +54,7 @@ class _RcliConfig(object):
 
     @property
     def command(self):
+        # type: () -> str
         """The name of the active command."""
         if not self._command:
             self._command = os.path.basename(
@@ -61,6 +63,7 @@ class _RcliConfig(object):
 
     @property
     def subcommands(self):
+        # type: () -> typing.Dict[str, RcliEntryPoint]
         """A mapping of subcommand names to loaded entry point targets."""
         if not self._subcommands:
             regex = re.compile(r'{}:(?P<name>[^:]+)$'.format(self.command))
@@ -78,6 +81,7 @@ class _RcliConfig(object):
 
     @property
     def version(self):
+        # type: () -> str
         """The version defined in the distribution."""
         if not self._version:
             if hasattr(self.distribution, 'version'):
@@ -86,6 +90,7 @@ class _RcliConfig(object):
 
     @property
     def entry_point(self):
+        # type: () -> pkg_resources.EntryPoint
         """The currently active entry point."""
         if not self._entry_point:
             for ep in pkg_resources.iter_entry_points(group='console_scripts'):
@@ -96,11 +101,13 @@ class _RcliConfig(object):
 
     @property
     def distribution(self):
+        # type: () -> typing.Optional[setuptools.dist.Distribution]
         """The distribution containing the currently active entry point."""
         if self.entry_point:
             return self.entry_point.dist
 
     def __getattr__(self, attr):
+        # type: (str) -> typing.Any
         """Return the rcli setting by name.
 
         Args:

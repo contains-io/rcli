@@ -29,10 +29,17 @@ Features
 - Argument parsing based on usage string.
 - Command line arguments are normalized into python function parameters.
 - Validation of command line arguments using `PEP 484`_ type hints.
-- Automatic generation of bash and zsh autocompletion scripts.
 - Logging with multiple levels and crash log generation.
 - Color coded logging based on log level.
 - Extensible subcommand generation based on entry point groups.
+
+
+Upcoming Features
+-----------------
+
+- Automatic generation of bash and zsh autocompletion scripts.
+- Usage string wrapping.
+- Internalization of usage strings.
 
 
 Basic Usage

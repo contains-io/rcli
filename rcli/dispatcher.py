@@ -5,19 +5,25 @@ Functions:
     main: The console script entry point set by autodetected CLI scripts.
 """
 
+from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import inspect
 import logging
 import sys
+import types  # noqa: F401 pylint: disable=unused-import
+import typing  # noqa: F401 pylint: disable=unused-import
 
 from docopt import docopt
 import colorama
 import six
 
-from . import exceptions as exc
-from . import log
-from . import call
+from . import (  # noqa: F401 pylint: disable=unused-import
+    exceptions as exc,
+    log,
+    call,
+    config
+)
 from .config import settings
 
 
@@ -42,6 +48,7 @@ See '{command} help <command>' for more information on a specific command.
 
 
 def main():
+    # type: () -> typing.Any
     """Parse the command line options and launch the requested command.
 
     If the command is 'help' then print the help message for the subcommand; if
@@ -76,6 +83,7 @@ def main():
 
 
 def _get_subcommand(name):
+    # type: (str) -> config.RcliEntryPoint
     """Return the function for the specified subcommand.
 
     Args:
@@ -95,6 +103,7 @@ def _get_subcommand(name):
 
 
 def _run_command(argv):
+    # type: (typing.List[str]) -> typing.Any
     """Run the command with the given CLI options and exit.
 
     Command functions are expected to have a __doc__ string that is parseable
@@ -120,6 +129,7 @@ def _run_command(argv):
 
 
 def _get_command_and_argv(argv):
+    # type: (typing.List[str]) -> typing.Tuple[str, typing.List[str]]
     """Extract the command name and arguments to pass to docopt.
 
     Args:
@@ -138,6 +148,7 @@ def _get_command_and_argv(argv):
 
 
 def _get_parsed_args(command_name, doc, argv):
+    # type: (str, str, typing.List[str]) -> typing.Dict[str, typing.Any]
     """Parse the docstring with docopt.
 
     Args:
@@ -158,6 +169,7 @@ def _get_parsed_args(command_name, doc, argv):
 
 
 def _help(command):
+    # type: (str) -> None
     """Print out a help message and exit the program.
 
     Args:
@@ -187,6 +199,7 @@ def _help(command):
 
 
 def _get_usage(doc):
+    # type: (str) -> str
     """Format the docstring for display to the user.
 
     Args:

@@ -4,6 +4,8 @@
 
 from __future__ import unicode_literals
 
+import os.path
+import shutil
 import sys
 
 from setuptools import setup
@@ -11,6 +13,14 @@ from setuptools import find_packages
 
 import rcli
 
+
+if sys.argv[-1] == 'egg_info':
+    if os.path.isdir('rcli.egg-info'):
+        shutil.rmtree('rcli.egg-info')
+
+setup_requires = [
+    'pytest-runner'
+]
 
 install_requires = [
     'colorama >= 0.3.6, < 1',
@@ -23,6 +33,7 @@ if sys.version_info < (3, 3):
     install_requires.append('backports.shutil_get_terminal_size')
 
 if sys.version_info < (3, 5):
+    setup_requires.append('typing >= 3.5.3')
     install_requires.append('typing >= 3.5.3')
 
 setup(
@@ -37,8 +48,8 @@ setup(
     license='MIT',
     packages=find_packages(exclude=['tests', 'docs']),
     install_requires=install_requires,
-    setup_requires=['pytest-runner'],
-    tests_require=['pytest >= 2.9'],
+    setup_requires=setup_requires,
+    tests_require=['pytest >= 3.0'],
     entry_points={
         'distutils.setup_keywords': [
             'autodetect_commands = rcli.autodetect:setup_keyword'
