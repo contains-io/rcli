@@ -5,20 +5,25 @@ Functions:
     main: The console script entry point set by autodetected CLI scripts.
 """
 
+from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import inspect
 import logging
-import re
 import sys
-import types
+import types  # noqa: F401 pylint: disable=unused-import
+import typing  # noqa: F401 pylint: disable=unused-import
 
 from docopt import docopt
 import colorama
 import six
 
-from . import exceptions as exc
-from . import log
+from . import (  # noqa: F401 pylint: disable=unused-import
+    exceptions as exc,
+    log,
+    call,
+    config
+)
 from .config import settings
 
 
@@ -43,6 +48,7 @@ See '{command} help <command>' for more information on a specific command.
 
 
 def main():
+    # type: () -> typing.Any
     """Parse the command line options and launch the requested command.
 
     If the command is 'help' then print the help message for the subcommand; if
@@ -76,65 +82,8 @@ def main():
         return log.handle_unexpected_exception(e)
 
 
-def _normalize(func, cli_args):
-    """Alter the docopt args to be valid python names for func.
-
-    Returns a dictionary based on cli_args that uses normalized keys. Keys are
-    normalized to valid python names.
-
-    Args:
-        func: The function being called to run the command.
-        cli_args: The parsed results of docopt for the given command.
-
-    Returns:
-        A dictionary containing normalized keys from the CLI arguments. If the
-        CLI arguments contains values that the function will not accept, those
-        keys will not be returned.
-    """
-    assert hasattr(func, '__call__'), (
-        'Cannot normalize parameters of a non-callable.')
-    is_func = isinstance(func, types.FunctionType)
-    params = _get_signature(func if is_func else func.__call__)
-    _LOGGER.debug('Found signature parameters: %s', params)
-    args = {}
-    multi_args = set()
-    for k, v in six.iteritems(cli_args):
-        nk = re.sub(r'\W|^(?=\d)', '_', k).strip('_').lower()
-        if nk in params:
-            if nk not in args or args[nk] is None:
-                args[nk] = v
-            elif nk in multi_args and v is not None:
-                args[nk].append(v)
-            elif v is not None:
-                multi_args.add(nk)
-                args[nk] = [args[nk], v]
-    _LOGGER.debug('Normalized "%s" to "%s".', cli_args, args)
-    return args
-
-
-def _get_signature(func):
-    """Return the signature of the given function.
-
-    inspect.getargspec() no longer exists as of Python 3.6, so detect the
-    correct method of accessing the signature for each language and return the
-    list of argument names.
-
-    Args:
-        func: The function from which to retrieve parameter names.
-
-    Returns:
-        A list of valid parameter names for the given function.
-    """
-    if six.PY3:
-        return [p.name for p in inspect.signature(func).parameters.values()
-                if p.kind == p.POSITIONAL_OR_KEYWORD]
-    sig = inspect.getargspec(func).args  # pylint: disable=deprecated-method
-    if six.PY2 and isinstance(func, types.MethodType):
-        sig = sig[1:]
-    return sig
-
-
 def _get_subcommand(name):
+    # type: (str) -> config.RcliEntryPoint
     """Return the function for the specified subcommand.
 
     Args:
@@ -153,55 +102,12 @@ def _get_subcommand(name):
     return settings.subcommands[name]
 
 
-def _get_callable(subcommand, args):
-    """Return a callable object from the subcommand.
-
-    Args:
-        subcommand: A object loaded from an entry point. May be a module,
-            class, or function.
-        args: The list of arguments parsed by docopt, before normalization.
-            These are passed to the init method of any class-based callable
-            objects being returned.
-
-    Returns:
-        The callable entry point for the subcommand. If the subcommand is a
-        function, it will be returned unchanged. If the subcommand is a module
-        or a class, an instance of the command class will be returned.
-
-    Raises:
-        AssertionError: Raised when a module entry point does not have a
-            callable class named Command.
-    """
-    _LOGGER.debug(
-        'Creating callable from subcommand "%s" with command line arguments: '
-        '%s', subcommand.__name__, args)
-    if isinstance(subcommand, types.ModuleType):
-        _LOGGER.debug('Subcommand is a module.')
-        assert hasattr(subcommand, 'Command'), (
-            'Module subcommand must have callable "Command" class definition.')
-        subcommand = subcommand.Command
-    if any(isinstance(subcommand, t) for t in six.class_types):
-        try:
-            return subcommand(**args)
-        except TypeError:
-            _LOGGER.debug('Subcommand does not take arguments.')
-            return subcommand()
-    return subcommand
-
-
 def _run_command(argv):
+    # type: (typing.List[str]) -> typing.Any
     """Run the command with the given CLI options and exit.
 
     Command functions are expected to have a __doc__ string that is parseable
     by docopt.
-
-    If the function object has a 'validate' attribute, the
-    arguments passed to the command will be validated before the command is
-    called.
-
-    If the function object has a 'schema' attribute, but not a 'validate'
-    attribute, and the 'schema' attribute has a 'validate' attribute, the
-    schema validate method will be called for validation.
 
     Args:
         argv: The list of command line arguments supplied for a command. The
@@ -216,13 +122,14 @@ def _run_command(argv):
     _LOGGER.info('Running command "%s %s" with args: %s', settings.command,
                  command_name, argv)
     subcommand = _get_subcommand(command_name)
+    func = call.get_callable(subcommand)
     doc = _get_usage(subcommand.__doc__)
     args = _get_parsed_args(command_name, doc, argv)
-    call = _get_callable(subcommand, args)
-    return call(**_normalize(call, args)) or 0
+    return call.call(func, args) or 0
 
 
 def _get_command_and_argv(argv):
+    # type: (typing.List[str]) -> typing.Tuple[str, typing.List[str]]
     """Extract the command name and arguments to pass to docopt.
 
     Args:
@@ -241,6 +148,7 @@ def _get_command_and_argv(argv):
 
 
 def _get_parsed_args(command_name, doc, argv):
+    # type: (str, str, typing.List[str]) -> typing.Dict[str, typing.Any]
     """Parse the docstring with docopt.
 
     Args:
@@ -261,6 +169,7 @@ def _get_parsed_args(command_name, doc, argv):
 
 
 def _help(command):
+    # type: (str) -> None
     """Print out a help message and exit the program.
 
     Args:
@@ -290,6 +199,7 @@ def _help(command):
 
 
 def _get_usage(doc):
+    # type: (str) -> str
     """Format the docstring for display to the user.
 
     Args:

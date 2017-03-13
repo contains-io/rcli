@@ -93,12 +93,12 @@ def test_help(create_project, run):
 
 def test_custom_primary_command(create_project, run):
     """Test creating a command that overwrites the primary command."""
-    usage = """
+    usage = '''
         Usage: hello [--name <name>]
 
         Options:
             --name <name>  The name to print [default: world].
-        """
+        '''
     with create_project('''
         def hello(name):
             """{usage}"""
@@ -176,13 +176,13 @@ def test_dedent(create_project, run):
 
 def test_multiline_usage(create_project, run):
     """Verify that multiline usage strings are parsed correctly."""
-    usage = """Usage: say hello [--name <name>]
+    usage = '''Usage: say hello [--name <name>]
                                 [--again]
 
             Options:
                 --name <name>  The name to print [default: world].
                 --again        Say it twice.
-            """
+            '''
     with create_project('''
         def hello(name, again):
             """{usage}"""
@@ -191,32 +191,21 @@ def test_multiline_usage(create_project, run):
         assert '[--again]' not in run('say help -a')[:-1]
 
 
-def test_duplicate_parameter(create_project, run):
-    """Test creating a command that sets a single value for duplicate keys."""
+def test_positional_args(create_project, run):
+    """Verify that positional argument parameters work as expected."""
     with create_project('''
-        def hello(name):
-            """
-            Usage: hello (--name <name> | <name>)
-
-            Options:
-                --name <name>  The name to print.
-            """
+        def hello(*name):
+            """usage: say hello <name>..."""
             print('Hello, {name}!'.format(name=name))
     '''):
-        assert run('hello --name everyone') == 'Hello, everyone!\n'
-        assert run('hello everyone') == 'Hello, everyone!\n'
-    with create_project('''
-        def hello(name):
-            """
-            Usage: hello [--name <name>] <name>
+        assert run('say hello world bob') == "Hello, ('world', 'bob')!\n"
 
-            Options:
-                --name <name>  The name to print.
-            """
-            print('Hello, {name}!'.format(name=name))
+
+def test_keyword_args(create_project, run):
+    """Verify that unused keyword argument parameters work as expected."""
+    with create_project('''
+        def hello(**kwargs):
+            """usage: say hello <name>"""
+            print('Hello, {name}!'.format(name=kwargs['name']))
     '''):
-        assert run('hello everyone') == 'Hello, everyone!\n'
-        assert run('hello --name bob everyone') in (
-            "Hello, ['bob', 'everyone']!\n",
-            "Hello, ['everyone', 'bob']!\n"
-        )
+        assert run('say hello world') == "Hello, world!\n"

@@ -10,6 +10,7 @@ Functions:
         log level passed in by the user on the command line.
 """
 
+from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
@@ -18,6 +19,7 @@ import logging
 import os.path
 import signal
 import sys
+import typing  # noqa: F401 pylint: disable=unused-import
 
 import colorama
 import six
@@ -29,6 +31,7 @@ _LOGFILE_STREAM = six.StringIO()
 
 
 def write_logfile():
+    # type: () -> None
     """Write a DEBUG log file COMMAND-YYYYMMDD-HHMMSS.ffffff.log."""
     command = os.path.basename(os.path.realpath(os.path.abspath(sys.argv[0])))
     now = datetime.datetime.now().strftime('%Y%m%d-%H%M%S.%f')
@@ -38,6 +41,7 @@ def write_logfile():
 
 
 def handle_unexpected_exception(exc):
+    # type: (Exception) -> str
     """Return an error message and write a log file if logging was not enabled.
 
     Args:
@@ -58,6 +62,7 @@ def handle_unexpected_exception(exc):
 
 
 def enable_logging(log_level):
+    # type: (typing.Union[None, int]) -> None
     """Configure the root logger and a logfile handler.
 
     Args:
@@ -80,6 +85,7 @@ def enable_logging(log_level):
 
 
 def get_log_level(args):
+    # type: (typing.Dict[str, typing.Any]) -> int
     """Get the log level from the CLI arguments.
 
     Removes logging arguments from sys.argv.
@@ -121,6 +127,7 @@ def get_log_level(args):
 
 
 def _logfile_sigterm_handler(*_):
+    # type: (...) -> None
     """Handle exit signals and write out a log file.
 
     Raises:
@@ -137,6 +144,7 @@ class _LogColorFormatter(logging.Formatter):
     """A colored logging.Formatter implementation."""
 
     def format(self, record):
+        # type: (logging.LogRecord) -> str
         """Format the log record with timestamps and level based colors.
 
         Args:
