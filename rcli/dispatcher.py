@@ -67,7 +67,8 @@ def main():
     try:
         log.enable_logging(log.get_log_level(args))
         default_args = sys.argv[2 if args.get('<command>') else 1:]
-        if args.get('<command>') == 'help':
+        if (args.get('<command>') == 'help' and
+                None not in settings.subcommands):
             subcommand = next(iter(args.get('<args>', default_args)), None)
             return _help(subcommand)
         else:
