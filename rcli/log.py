@@ -41,7 +41,7 @@ def write_logfile():
 
 
 def handle_unexpected_exception(exc):
-    # type: (Exception) -> str
+    # type: (Exception) -> typing.Union[str, Exception]
     """Return an error message and write a log file if logging was not enabled.
 
     Args:
@@ -50,15 +50,16 @@ def handle_unexpected_exception(exc):
     Returns:
         A message to display to the user concerning the unexpected exception.
     """
-    msg = str(exc)
-    if msg:
-        msg += '\n'
     try:
         write_logfile()
-        msg += 'Please see the log file for more information.'
+        addendum = 'Please see the log file for more information.'
     except IOError:
-        msg += 'Unable to write log file.'
-    return msg
+        addendum = 'Unable to write log file.'
+    try:
+        message = str(exc)
+        return '{}{}{}'.format(message, '\n' if message else '', addendum)
+    except Exception:  # pylint: disable=broad-except
+        return exc
 
 
 def enable_logging(log_level):
