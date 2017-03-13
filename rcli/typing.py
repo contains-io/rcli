@@ -108,7 +108,7 @@ class _ClsReprMeta(type):
 
     def __repr__(cls):
         # type: () -> str
-        """Return a custom string for the subclass if defined."""
+        """Return a custom string for the type repr if defined."""
         if cls.__class_repr__:
             return cls.__class_repr__
         return super(cls.__class__, cls).__repr__()
@@ -134,15 +134,19 @@ class _BoundedMeta(_Uninstantiable):
         keyfunc_name = cls._get_fullname(keyfunc)
         identity = cls._identity
         try:
-            class BaseClass(type_):
-                """Use a subclass of type_ if it is subclassable."""
-                pass
+            class _(type_):  # type: ignore
+                """Check if type_ is subclassable."""
+            BaseClass = type_
         except TypeError:
-            BaseClass = object
+            BaseClass = object  # type: ignore
 
-        @six.add_metaclass(_ClsReprMeta)
+        class _BoundedSubclassMeta(
+                _ClsReprMeta, BaseClass.__class__):  # type: ignore
+            """Use the type_ metaclass and include class repr functionality."""
+
+        @six.add_metaclass(_BoundedSubclassMeta)
         class _BoundedSubclass(BaseClass):  # type: ignore
-            """A subclass of a type bounded by a slice."""
+            """A subclass of type_ or object, bounded by a slice."""
 
             def __new__(cls, __value, *args, **kwargs):
                 # type: (Any, *Any, **Any) -> _T
@@ -158,60 +162,77 @@ class _BoundedMeta(_Uninstantiable):
                         constructor.
                 """
                 try:
-                    ret = type_(__value, *args, **kwargs)
+                    instance = BaseClass(__value, *args, **kwargs)
                 except TypeError:
-                    ret = __value
-                expected = keyfunc(ret)
-                if bound.start and expected < bound.start:
+                    instance = __value
+                cmp_val = keyfunc(instance)
+                if bound.start and cmp_val < bound.start:
                     if keyfunc is not identity:
                         raise ValueError(
                             'The value of {}({}) [{}] is below the minimum '
                             'allowed value of {}.'.format(
-                                keyfunc_name, repr(__value), repr(expected),
+                                keyfunc_name, repr(__value), repr(cmp_val),
                                 bound.start))
                     raise ValueError(
                         'The value {} is below the minimum allowed value '
                         'of {}.'.format(repr(__value), bound.start))
-                if bound.stop and expected > bound.stop:
+                if bound.stop and cmp_val > bound.stop:
                     if keyfunc is not identity:
                         raise ValueError(
                             'The value of {}({}) [{}] is above the maximum'
                             ' allowed value of {}.'.format(
-                                keyfunc_name, repr(__value), repr(expected),
+                                keyfunc_name, repr(__value), repr(cmp_val),
                                 bound.stop))
                     raise ValueError(
                         'The value {} is above the maximum allowed value '
                         'of {}.'.format(repr(__value), bound.stop))
-                return ret
+                return instance
 
+        _BoundedSubclass.__class_repr__ = cls._get_class_repr(
+            type_, bound, keyfunc, keyfunc_name)
+        return _BoundedSubclass
+
+    def _get_class_repr(cls, type_, bound, keyfunc, keyfunc_name):
+        # type: (Any, slice, Callable, str) -> str
+        """Return a class representation using the slice parameters.
+
+        Args:
+            type_: The type the class was sliced with.
+            bound: The boundaries specified for the values of type_.
+            keyfunc: The comparison function used to check the value
+                boundaries.
+            keyfunc_name: The name of keyfunc.
+
+        Returns:
+            A string representing the class.
+        """
         if keyfunc is not cls._default:
-            _BoundedSubclass.__class_repr__ = '{}.{}[{}, {}, {}]'.format(
+            return '{}.{}[{}, {}, {}]'.format(
                 cls.__module__, cls.__name__, cls._get_fullname(type_),
                 cls._get_bound_repr(bound), keyfunc_name)
         else:
-            _BoundedSubclass.__class_repr__ = '{}.{}[{}, {}]'.format(
+            return '{}.{}[{}, {}]'.format(
                 cls.__module__, cls.__name__, cls._get_fullname(type_),
                 cls._get_bound_repr(bound))
-        return _BoundedSubclass
 
     def _get_args(cls, args):
         # type: (tuple) -> Tuple[Any, slice, Callable]
         """Return the parameters necessary to check type boundaries.
 
         Args:
-            args: A tuple with two or three parameters: a type, a slice
+            args: A tuple with two or three elements: a type, a slice
                 representing the minimum and maximum lengths allowed for values
                 of that type and, optionally, a function to use on values
                 before comparing against the bounds.
 
         Returns:
-            A tuple with three parameters: a type, a slice, and a function to
+            A tuple with three elements: a type, a slice, and a function to
             apply to objects of the given type. If no function was specified,
             it returns the identity function.
         """
         if not isinstance(args, tuple):
             raise TypeError(
-                '{}[...] takes at least two arguments.'.format(cls.__name__))
+                '{}[...] takes two or three arguments.'.format(cls.__name__))
         elif len(args) == 2:
             type_, bound = args
             keyfunc = cls._identity
@@ -224,8 +245,7 @@ class _BoundedMeta(_Uninstantiable):
             bound = slice(bound)
         if isinstance(type_, six.string_types):
             # pragma pylint: disable=protected-access
-            ref = _ForwardRef(type_)
-            type_ = ref._eval_type(globals(), globals())
+            type_ = _ForwardRef(type_)._eval_type(globals(), globals())
             # pragma pylint: enable=protected-access
         return type_, bound, keyfunc
 
@@ -270,7 +290,7 @@ class _BoundedMeta(_Uninstantiable):
             obj: An object.
 
         Returns:
-            The full name of the object.
+            The full class name of the object.
         """
         if not hasattr(obj, '__name__'):
             obj = obj.__class__
@@ -283,7 +303,7 @@ class _BoundedMeta(_Uninstantiable):
 class Bounded(object):
     """A type that creates a bounded version of a type when sliced.
 
-    Bounded can be sliced with two or three parameters: a type, a slice
+    Bounded can be sliced with two or three elements: a type, a slice
     representing the minimum and maximum lengths allowed for values of that
     type and, optionally, a function to use on values before comparing against
     the bounds.
@@ -375,16 +395,16 @@ def get_type_hints(obj,  # type: Any
                    localns=None  # type: Optional[Dict[str, Any]]
                    ):
     # type: (...) -> Dict[str, Any]
-    """Return the all type hints for the function.
+    """Return all type hints for the function.
 
-    This attempts to use get_type_hints first, but if that returns None
+    This attempts to use typing.get_type_hints first, but if that returns None
     then it will attempt to reuse much of the logic from the Python 3 version
-    of get_type_hints; the Python 2 version does nothing. In addition to
+    of typing.get_type_hints; the Python 2 version does nothing. In addition to
     this logic, if no code annotations exist, it will attempt to extract
     comment type hints for Python 2/3 compatibility.
 
     Args:
-        obj: The annotated function.
+        obj: The object to search for type hints.
         globalns: The currently known global namespace.
         localns: The currently known local namespace.
 
@@ -445,7 +465,7 @@ def _get_comment_type_hints(func,  # type: Callable
     """Get a mapping of parameter names to type hints from type hint comments.
 
     Args:
-        func: The annotated function to search for type hint comments.
+        func: The function to search for type hint comments.
 
     Returns:
         A dictionary mapping the function parameters to the type hints found

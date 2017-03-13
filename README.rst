@@ -39,7 +39,7 @@ Upcoming Features
 
 - Automatic generation of bash and zsh autocompletion scripts.
 - Usage string wrapping.
-- Internalization of usage strings.
+- Internationalization of usage strings.
 
 
 Basic Usage
@@ -119,13 +119,13 @@ message::
 .. _PEP 484: https://www.python.org/dev/peps/pep-0484/
 .. _docopt: http://docopt.org/
 
-.. |Build Status| image:: https://travis-ci.org/containenv/rcli.svg?branch=development
-   :target: https://travis-ci.org/containenv/rcli
-.. |Coverage Status| image:: https://coveralls.io/repos/github/containenv/rcli/badge.svg?branch=development
-   :target: https://coveralls.io/github/containenv/rcli?branch=development
+.. |Build Status| image:: https://travis-ci.org/contains-io/rcli.svg?branch=development
+   :target: https://travis-ci.org/contains-io/rcli
+.. |Coverage Status| image:: https://coveralls.io/repos/github/contains-io/rcli/badge.svg?branch=development
+   :target: https://coveralls.io/github/contains-io/rcli?branch=development
 .. |PyPI| image:: https://img.shields.io/pypi/v/rcli.svg
    :target: https://pypi.python.org/pypi/rcli/
 .. |Python Versions| image:: https://img.shields.io/pypi/pyversions/rcli.svg
    :target: https://pypi.python.org/pypi/rcli/
 .. |Code Quality| image:: https://api.codacy.com/project/badge/Grade/bfa6fff942654a27b4dc153e2876a111
-   :target: https://www.codacy.com/app/containenv/rcli?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dangle/rcli&amp;utm_campaign=Badge_Grade
+   :target: https://www.codacy.com/app/contains-io/rcli?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dangle/rcli&amp;utm_campaign=Badge_Grade

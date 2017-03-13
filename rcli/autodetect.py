@@ -94,7 +94,8 @@ def _get_commands(dist  # type: setuptools.dist.Distribution
             can be used to generate command entry points.
 
     Returns:
-        A list of entry point strings for each autodetected subcommand.
+        A dictionary containing a mapping of primary commands to sets of
+        subcommands.
     """
     py_files = (f for f in setuptools.findall()
                 if os.path.splitext(f)[1].lower() == '.py')

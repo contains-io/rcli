@@ -43,7 +43,7 @@ setup(
     long_description=open('README.rst').read(),
     author='Dangle Nuño',
     author_email='dangle@rooph.io',
-    url='https://github.com/containenv/rcli',
+    url='https://github.com/contains-io/rcli',
     keywords=['docopt', 'commands', 'subcommands', 'tooling', 'cli'],
     license='MIT',
     packages=find_packages(exclude=['tests', 'docs']),
