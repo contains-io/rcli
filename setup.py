@@ -11,15 +11,14 @@ import sys
 from setuptools import setup
 from setuptools import find_packages
 
-import rcli
-
 
 if sys.argv[-1] == 'egg_info':
     if os.path.isdir('rcli.egg-info'):
         shutil.rmtree('rcli.egg-info')
 
 setup_requires = [
-    'pytest-runner'
+    'pytest-runner',
+    'setuptools_scm'
 ]
 
 install_requires = [
@@ -38,7 +37,7 @@ if sys.version_info < (3, 5):
 
 setup(
     name='rcli',
-    version=rcli.__version__,
+    use_scm_version=True,
     description='A library for rapidly creating command-line tools.',
     long_description=open('README.rst').read(),
     author='Dangle Nuño',
