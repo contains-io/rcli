@@ -14,26 +14,10 @@ from setuptools import find_packages
 
 if sys.argv[-1] == 'egg_info':
     if os.path.isdir('rcli.egg-info'):
-        shutil.rmtree('rcli.egg-info')
-
-setup_requires = [
-    'pytest-runner',
-    'setuptools_scm'
-]
-
-install_requires = [
-    'colorama >= 0.3.6, < 1',
-    'tqdm >= 4.9.0, < 5',
-    'docopt >= 0.6.2, < 1',
-    'six >= 1, < 2'
-]
-
-if sys.version_info < (3, 3):
-    install_requires.append('backports.shutil_get_terminal_size')
-
-if sys.version_info < (3, 5):
-    setup_requires.append('typing >= 3.5.3')
-    install_requires.append('typing >= 3.5.3')
+        try:
+            shutil.rmtree('rcli.egg-info')
+        except:  # pylint: disable=bare-except
+            pass
 
 setup(
     name='rcli',
@@ -41,13 +25,24 @@ setup(
     description='A library for rapidly creating command-line tools.',
     long_description=open('README.rst').read(),
     author='Dangle Nuño',
-    author_email='dangle@rooph.io',
+    author_email='dangle@contains.io',
     url='https://github.com/contains-io/rcli',
     keywords=['docopt', 'commands', 'subcommands', 'tooling', 'cli'],
     license='MIT',
     packages=find_packages(exclude=['tests', 'docs']),
-    install_requires=install_requires,
-    setup_requires=setup_requires,
+    install_requires=[
+        'typing >= 3.5.3',
+        'backports.shutil_get_terminal_size',
+        'colorama >= 0.3.6, < 1',
+        'tqdm >= 4.9.0, < 5',
+        'docopt >= 0.6.2, < 1',
+        'six >= 1, < 2'
+    ],
+    setup_requires=[
+        'typing >= 3.5.3',
+        'pytest-runner',
+        'setuptools_scm'
+    ],
     tests_require=['pytest >= 3.0'],
     entry_points={
         'distutils.setup_keywords': [
