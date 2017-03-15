@@ -6,18 +6,16 @@ from __future__ import unicode_literals
 
 import os.path
 import shutil
-import sys
 
 from setuptools import setup
 from setuptools import find_packages
 
 
-if sys.argv[-1] == 'egg_info':
-    if os.path.isdir('rcli.egg-info'):
-        try:
-            shutil.rmtree('rcli.egg-info')
-        except:  # pylint: disable=bare-except
-            pass
+if os.path.isdir('rcli.egg-info'):
+    try:
+        shutil.rmtree('rcli.egg-info')
+    except:  # pylint: disable=bare-except
+        pass
 
 setup(
     name='rcli',
@@ -36,12 +34,16 @@ setup(
         'colorama >= 0.3.6, < 1',
         'tqdm >= 4.9.0, < 5',
         'docopt >= 0.6.2, < 1',
-        'six >= 1, < 2'
+        'six >= 1.10.0'
     ],
     setup_requires=[
-        'typing >= 3.5.3',
+        'six >= 1.10.0',
+        'packaging',
+        'appdirs',
         'pytest-runner',
-        'setuptools_scm'
+        'setuptools_scm',
+        'typing >= 3.5.3',
+        'docopt >= 0.6.2, < 1'
     ],
     tests_require=['pytest >= 3.0'],
     entry_points={
