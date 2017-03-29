@@ -21,11 +21,10 @@ import sys
 import types
 import typing
 
+from typingplus.types import Singleton
 import pkg_resources
 import setuptools  # noqa: F401 pylint: disable=unused-import
 import six
-
-from .typing import Singleton
 
 
 _LOGGER = logging.getLogger(__name__)

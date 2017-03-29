@@ -15,30 +15,30 @@ from types import (  # noqa: F401 pylint: disable=unused-import
     MethodType,
     ModuleType
 )
-from typing import (  # noqa: F401 pylint: disable=unused-import
-    Any,
-    Dict,
-    Generator,
-    Tuple,
-    Union
-)
 import collections
+import inspect
 import keyword
 import logging
 import re
 
 import six
-
-from . import config  # noqa: F401 pylint: disable=unused-import
-from . import exceptions as exc
-from .typing import (
+from typingplus import (  # noqa: F401 pylint: disable=unused-import
+    Any,
+    Dict,
+    Generator,
+    Tuple,
+    Union,
     cast,
-    get_signature,
     get_type_hints
 )
 
+from . import config  # noqa: F401 pylint: disable=unused-import
+from . import exceptions as exc
+
 
 _LOGGER = logging.getLogger(__name__)
+
+getargspec = getattr(inspect, 'get{}argspec'.format('full' if six.PY3 else ''))
 
 
 def call(func, args):
@@ -53,25 +53,25 @@ def call(func, args):
     """
     assert hasattr(func, '__call__'), 'Cannot call func: {}'.format(
         func.__name__)
-    is_func = isinstance(func, FunctionType)
-    raw_func = func if is_func else func.__class__.__call__
+    raw_func = (
+        func if isinstance(func, FunctionType) else func.__class__.__call__)
     hints = collections.defaultdict(lambda: Any, get_type_hints(raw_func))
-    params, vararg, kwarg = get_signature(raw_func)
-    params += [vararg, kwarg]
+    signature = getargspec(raw_func)
+    params = list(signature[0]) + [s for s in signature[1:3] if s]
     keyword_args = {}
     positional_args = ()
     for k, nk, v in _normalize(args):
-        if nk == vararg:
+        if nk == signature[1]:
             hints[nk] = Tuple[hints[nk], ...]
-        elif nk not in params and kwarg in hints:
-            hints[nk] = hints[kwarg]
+        elif nk not in params and signature[2] in hints:
+            hints[nk] = hints[signature[2]]
         try:
             value = cast(hints[nk], v)
-        except exc.CastError as e:
+        except TypeError as e:
             six.raise_from(exc.InvalidCliValueError(k, v), e)
-        if nk == vararg:
+        if nk == signature[1]:
             positional_args = value
-        elif (nk in params or kwarg) and (
+        elif (nk in params or signature[2]) and (
                 nk not in keyword_args or keyword_args[nk] is None):
             keyword_args[nk] = value
     return func(*positional_args, **keyword_args)
