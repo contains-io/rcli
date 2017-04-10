@@ -21,7 +21,6 @@ import keyword
 import logging
 import re
 
-import six
 from typingplus import (  # noqa: F401 pylint: disable=unused-import
     Any,
     Dict,
@@ -31,6 +30,7 @@ from typingplus import (  # noqa: F401 pylint: disable=unused-import
     cast,
     get_type_hints
 )
+import six
 
 from . import config  # noqa: F401 pylint: disable=unused-import
 from . import exceptions as exc
@@ -38,7 +38,8 @@ from . import exceptions as exc
 
 _LOGGER = logging.getLogger(__name__)
 
-getargspec = getattr(inspect, 'get{}argspec'.format('full' if six.PY3 else ''))
+_getspec = getattr(inspect, 'get{}argspec'.format('full' if six.PY3 else ''))
+_ArgSpec = collections.namedtuple('_ArgSpec', ('args', 'varargs', 'varkw'))
 
 
 def call(func, args):
@@ -56,25 +57,24 @@ def call(func, args):
     raw_func = (
         func if isinstance(func, FunctionType) else func.__class__.__call__)
     hints = collections.defaultdict(lambda: Any, get_type_hints(raw_func))
-    signature = getargspec(raw_func)
-    params = list(signature[0]) + [s for s in signature[1:3] if s]
-    keyword_args = {}
-    positional_args = ()
+    argspec = _getargspec(raw_func)
+    named_args = {}
+    varargs = ()
     for k, nk, v in _normalize(args):
-        if nk == signature[1]:
+        if nk == argspec.varargs:
             hints[nk] = Tuple[hints[nk], ...]
-        elif nk not in params and signature[2] in hints:
-            hints[nk] = hints[signature[2]]
+        elif nk not in argspec.args and argspec.varkw in hints:
+            hints[nk] = hints[argspec.varkw]
         try:
             value = cast(hints[nk], v)
         except TypeError as e:
             six.raise_from(exc.InvalidCliValueError(k, v), e)
-        if nk == signature[1]:
-            positional_args = value
-        elif (nk in params or signature[2]) and (
-                nk not in keyword_args or keyword_args[nk] is None):
-            keyword_args[nk] = value
-    return func(*positional_args, **keyword_args)
+        if nk == argspec.varargs:
+            varargs = value
+        elif (nk in argspec.args or argspec.varkw) and (
+                nk not in named_args or named_args[nk] is None):
+            named_args[nk] = value
+    return func(*varargs, **named_args)
 
 
 def get_callable(subcommand):
@@ -106,6 +106,32 @@ def get_callable(subcommand):
     if any(isinstance(callable_, t) for t in six.class_types):
         return callable_()
     return callable_
+
+
+def _getargspec(func):
+    """Return a Python 3-like argspec object.
+
+    Note:
+        args contains varargs and varkw if they exist. This behavior differs
+        from getargspec and getfullargspec.
+
+    Args:
+        func: The function to inspect.
+
+    Returns:
+        A named tuple with three parameters:
+            args: All named arguments, including varargs and varkw if they are
+                not None.
+            varargs: The name of the *args variable. May be None.
+            varkw: The name of the **kwargs variable. May be None.
+    """
+    argspec = _getspec(func)
+    args = list(argspec.args)
+    if argspec.varargs:
+        args += [argspec.varargs]
+    if argspec[2]:  # "keywords" in PY2 and "varkw" in PY3
+        args += [argspec[2]]
+    return _ArgSpec(args, argspec.varargs, argspec[2])
 
 
 def _normalize(args):
