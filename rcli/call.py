@@ -15,30 +15,31 @@ from types import (  # noqa: F401 pylint: disable=unused-import
     MethodType,
     ModuleType
 )
-from typing import (  # noqa: F401 pylint: disable=unused-import
-    Any,
-    Dict,
-    Generator,
-    Tuple,
-    Union
-)
 import collections
+import inspect
 import keyword
 import logging
 import re
 
+from typingplus import (  # noqa: F401 pylint: disable=unused-import
+    Any,
+    Dict,
+    Generator,
+    Tuple,
+    Union,
+    cast,
+    get_type_hints
+)
 import six
 
 from . import config  # noqa: F401 pylint: disable=unused-import
 from . import exceptions as exc
-from .typing import (
-    cast,
-    get_signature,
-    get_type_hints
-)
 
 
 _LOGGER = logging.getLogger(__name__)
+
+_getspec = getattr(inspect, 'get{}argspec'.format('full' if six.PY3 else ''))
+_ArgSpec = collections.namedtuple('_ArgSpec', ('args', 'varargs', 'varkw'))
 
 
 def call(func, args):
@@ -53,28 +54,27 @@ def call(func, args):
     """
     assert hasattr(func, '__call__'), 'Cannot call func: {}'.format(
         func.__name__)
-    is_func = isinstance(func, FunctionType)
-    raw_func = func if is_func else func.__class__.__call__
+    raw_func = (
+        func if isinstance(func, FunctionType) else func.__class__.__call__)
     hints = collections.defaultdict(lambda: Any, get_type_hints(raw_func))
-    params, vararg, kwarg = get_signature(raw_func)
-    params += [vararg, kwarg]
-    keyword_args = {}
-    positional_args = ()
+    argspec = _getargspec(raw_func)
+    named_args = {}
+    varargs = ()
     for k, nk, v in _normalize(args):
-        if nk == vararg:
+        if nk == argspec.varargs:
             hints[nk] = Tuple[hints[nk], ...]
-        elif nk not in params and kwarg in hints:
-            hints[nk] = hints[kwarg]
+        elif nk not in argspec.args and argspec.varkw in hints:
+            hints[nk] = hints[argspec.varkw]
         try:
             value = cast(hints[nk], v)
-        except exc.CastError as e:
+        except TypeError as e:
             six.raise_from(exc.InvalidCliValueError(k, v), e)
-        if nk == vararg:
-            positional_args = value
-        elif (nk in params or kwarg) and (
-                nk not in keyword_args or keyword_args[nk] is None):
-            keyword_args[nk] = value
-    return func(*positional_args, **keyword_args)
+        if nk == argspec.varargs:
+            varargs = value
+        elif (nk in argspec.args or argspec.varkw) and (
+                nk not in named_args or named_args[nk] is None):
+            named_args[nk] = value
+    return func(*varargs, **named_args)
 
 
 def get_callable(subcommand):
@@ -106,6 +106,32 @@ def get_callable(subcommand):
     if any(isinstance(callable_, t) for t in six.class_types):
         return callable_()
     return callable_
+
+
+def _getargspec(func):
+    """Return a Python 3-like argspec object.
+
+    Note:
+        args contains varargs and varkw if they exist. This behavior differs
+        from getargspec and getfullargspec.
+
+    Args:
+        func: The function to inspect.
+
+    Returns:
+        A named tuple with three parameters:
+            args: All named arguments, including varargs and varkw if they are
+                not None.
+            varargs: The name of the *args variable. May be None.
+            varkw: The name of the **kwargs variable. May be None.
+    """
+    argspec = _getspec(func)
+    args = list(argspec.args)
+    if argspec.varargs:
+        args += [argspec.varargs]
+    if argspec[2]:  # "keywords" in PY2 and "varkw" in PY3
+        args += [argspec[2]]
+    return _ArgSpec(args, argspec.varargs, argspec[2])
 
 
 def _normalize(args):

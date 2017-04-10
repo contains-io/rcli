@@ -29,7 +29,7 @@ setup(
     license='MIT',
     packages=find_packages(exclude=['tests', 'docs']),
     install_requires=[
-        'typing >= 3.5.3',
+        'typingplus >= 1.0.2, < 2',
         'backports.shutil_get_terminal_size',
         'colorama >= 0.3.6, < 1',
         'tqdm >= 4.9.0, < 5',
@@ -42,7 +42,7 @@ setup(
         'appdirs',
         'pytest-runner',
         'setuptools_scm',
-        'typing >= 3.5.3',
+        'typingplus >= 1.0.2, < 2',
         'docopt >= 0.6.2, < 1'
     ],
     tests_require=['pytest >= 3.0'],

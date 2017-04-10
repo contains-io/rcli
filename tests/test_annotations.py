@@ -9,14 +9,9 @@ import sys
 
 import pytest
 
-import rcli.typing
-
 
 PY3 = sys.version_info.major == 3
 PY3_ONLY = pytest.mark.skipif(not PY3, reason='Python 3 Only')
-
-if PY3:
-    long = int  # pylint: disable=redefined-builtin
 
 
 def test_short_comment_types(create_project, run):
@@ -109,7 +104,6 @@ def test_string_types(create_project, run, type_, expected):
 
 @pytest.mark.parametrize('type_', [
     'int',
-    'long',
     'float',
     'complex'
 ])
@@ -117,10 +111,6 @@ def test_numeric_types(create_project, run, type_):
     """Test type hinting with numeric types."""
     with create_project('''
         from typing import Any
-        import sys
-
-        if sys.version_info.major == 3:
-            long = int
 
         def types(num):
             # type: ({type}) -> Any
@@ -157,14 +147,12 @@ def test_sequence_types(create_project, run, type_, expected_type, expected):
         import typing
 
         def types(value):
-            # type: ({type}, {type}) -> typing.Any
+            # type: ({type}) -> typing.Any
             """usage: say types <value>..."""
             print(repr(value))
             print(type(value))
     '''.format(type=type_)):
-        reprs = run(
-            'say types 1 2 3 3 4',
-            stderr=True).strip().split('\n')
+        reprs = run('say types 1 2 3 3 4', stderr=True).strip().split('\n')
         reprs[0] = eval(reprs[0])
         assert reprs == [
             expected,
@@ -227,46 +215,3 @@ def test_keyword_arg_casting(create_project, run):
     '''):
         actual = eval(run('say types 1 2')[:-1])
         assert actual == {'types': True, 'arg1': 1, 'arg2': 2}
-
-
-def test_bounded_type():
-    """Test the bounded type object."""
-    with pytest.raises(TypeError):
-        BoundedInt = rcli.typing.Bounded[int]
-    with pytest.raises(TypeError):
-        BoundedInt = rcli.typing.Bounded[int, 10:20, lambda x: x, None]
-    BoundedInt = rcli.typing.Bounded[int, 10:20]
-    with pytest.raises(ValueError):
-        BoundedInt(5)
-    assert BoundedInt(10) == 10
-    assert BoundedInt(15) == 15
-    assert BoundedInt(20) == 20
-    with pytest.raises(ValueError):
-        BoundedInt(25)
-    BoundedStr = rcli.typing.Bounded[str, 1:5, len]
-    with pytest.raises(ValueError):
-        BoundedStr('')
-    assert BoundedStr('abc') == 'abc'
-    with pytest.raises(ValueError):
-        BoundedStr('abcdef')
-
-
-def test_length_type():
-    """Test the bounded length type object."""
-    with pytest.raises(TypeError):
-        LengthBoundedStr = rcli.typing.Length[str]
-    with pytest.raises(TypeError):
-        LengthBoundedStr = rcli.typing.Length[str, 10:20, lambda x: x]
-    LengthBoundedStr = rcli.typing.Length[str, 1:5]
-    with pytest.raises(ValueError):
-        LengthBoundedStr('')
-    assert LengthBoundedStr('a') == 'a'
-    assert LengthBoundedStr('abcde') == 'abcde'
-    with pytest.raises(ValueError):
-        LengthBoundedStr('abcdef')
-    LengthBoundedList = rcli.typing.Length[list, 1:1]
-    with pytest.raises(ValueError):
-        LengthBoundedList([])
-    assert LengthBoundedList([1]) == [1]
-    with pytest.raises(ValueError):
-        LengthBoundedList([1, 2])
