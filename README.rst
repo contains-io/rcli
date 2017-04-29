@@ -127,5 +127,5 @@ message::
    :target: https://pypi.python.org/pypi/rcli/
 .. |Python Versions| image:: https://img.shields.io/pypi/pyversions/rcli.svg
    :target: https://pypi.python.org/pypi/rcli/
-.. |Code Quality| image:: https://api.codacy.com/project/badge/Grade/bfa6fff942654a27b4dc153e2876a111
-   :target: https://www.codacy.com/app/contains-io/rcli?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dangle/rcli&amp;utm_campaign=Badge_Grade
+.. |Code Quality| image:: https://api.codacy.com/project/badge/Grade/61ee45c79340430793ce074748f69686
+   :target: https://www.codacy.com/app/contains-io/rcli?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=contains-io/rcli&amp;utm_campaign=Badge_Grade
