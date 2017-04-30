@@ -45,7 +45,9 @@ setup(
         'typingplus >= 1.0.2, < 2',
         'docopt >= 0.6.2, < 1'
     ],
-    tests_require=['pytest >= 3.0'],
+    tests_require=[
+        'pytest >= 3.0'
+    ],
     entry_points={
         'distutils.setup_keywords': [
             'autodetect_commands = rcli.autodetect:setup_keyword'
