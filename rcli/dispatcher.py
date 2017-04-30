@@ -71,9 +71,8 @@ def main():
                 None not in settings.subcommands):
             subcommand = next(iter(args.get('<args>', default_args)), None)
             return _help(subcommand)
-        else:
-            argv = [args.get('<command>')] + args.get('<args>', default_args)
-            return _run_command(argv)
+        argv = [args.get('<command>')] + args.get('<args>', default_args)
+        return _run_command(argv)
     except exc.InvalidCliValueError as e:
         return str(e)
     except (KeyboardInterrupt, EOFError):
@@ -186,7 +185,7 @@ def _help(command):
     if not command:
         doc = _DEFAULT_DOC.format(message='')
     elif command in ('-a', '--all'):
-        subcommands = [k for k in settings.subcommands.keys() if k is not None]
+        subcommands = [k for k in settings.subcommands if k is not None]
         available_commands = subcommands + ['help']
         command_doc = '\nAvailable commands:\n{}\n'.format(
             '\n'.join('  {}'.format(c) for c in sorted(available_commands)))
