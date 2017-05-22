@@ -68,6 +68,7 @@ def call(func, args):
         try:
             value = cast(hints[nk], v)
         except TypeError as e:
+            _LOGGER.exception(e)
             six.raise_from(exc.InvalidCliValueError(k, v), e)
         if nk == argspec.varargs:
             varargs = value
@@ -148,7 +149,7 @@ def _normalize(args):
     """
     for k, v in six.iteritems(args):
         nk = re.sub(r'\W|^(?=\d)', '_', k).strip('_').lower()
-        if keyword.iskeyword(nk):
+        if keyword.iskeyword(nk) or nk in dir(six.moves.builtins):
             nk += '_'
         _LOGGER.debug('Normalized "%s" to "%s".', k, nk)
         yield k, nk, v
