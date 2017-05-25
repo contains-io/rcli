@@ -92,3 +92,5 @@ ENV/
 .sublimelinterrc
 *.sublime-project
 *.sublime-workspace
+
+.mypy_cache

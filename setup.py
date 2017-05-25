@@ -4,6 +4,7 @@
 
 from __future__ import unicode_literals
 
+from io import open  # pylint: disable=redefined-builtin
 import os.path
 import shutil
 
@@ -17,11 +18,14 @@ if os.path.isdir('rcli.egg-info'):
     except:  # pylint: disable=bare-except
         pass
 
+with open('README.rst') as readme_fp:
+    readme = readme_fp.read()
+
 setup(
     name='rcli',
     use_scm_version=True,
     description='A library for rapidly creating command-line tools.',
-    long_description=open('README.rst').read(),
+    long_description=readme,
     author='Dangle Nuño',
     author_email='dangle@contains.io',
     url='https://github.com/contains-io/rcli',

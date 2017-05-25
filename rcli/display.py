@@ -34,12 +34,7 @@ from colorama import (
 )
 from tqdm import tqdm
 
-try:
-    from shutil import get_terminal_size  # type: ignore
-except ImportError:
-    from backports.shutil_get_terminal_size import (  # type: ignore
-        get_terminal_size
-    )
+from .backports.get_terminal_size import get_terminal_size
 
 
 _LOGGER = logging.getLogger(__name__)

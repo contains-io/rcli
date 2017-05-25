@@ -149,7 +149,8 @@ def _normalize(args):
     """
     for k, v in six.iteritems(args):
         nk = re.sub(r'\W|^(?=\d)', '_', k).strip('_').lower()
-        if keyword.iskeyword(nk) or nk in dir(six.moves.builtins):
+        do_not_shadow = dir(six.moves.builtins)  # type: ignore
+        if keyword.iskeyword(nk) or nk in do_not_shadow:
             nk += '_'
         _LOGGER.debug('Normalized "%s" to "%s".', k, nk)
         yield k, nk, v
