@@ -6,7 +6,7 @@ rcli
 *Rapidly create full-featured command line interfaces with help, subcommand
 dispatch, and validation.*
 
-**rcli** uses docopt_ to give you the control over your usage messages that you
+``rcli`` uses docopt_ to give you the control over your usage messages that you
 want, but adds functionality such as automatic subcommand dispatching, usage
 string wrapping, internationalization, and parameter validation.
 
@@ -45,7 +45,7 @@ Upcoming Features
 Basic Usage
 -----------
 
-To use **rcli**, add ``rcli`` to your ``setup_requires`` argument in your
+To use ``rcli``, add ``rcli`` to your ``setup_requires`` argument in your
 *setup.py* and set the ``autodetect_commands`` parameter to ``True``.
 
 .. code-block:: python
