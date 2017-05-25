@@ -3,6 +3,7 @@
 
 from __future__ import unicode_literals
 
+from io import open
 import glob
 import re
 import subprocess
@@ -105,10 +106,14 @@ def test_sigterm_log(create_project):
             ['say', 'nothing'], stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, universal_newlines=True)
         end = time.time() + 30
-        while 'ready' not in process.stdout.read(5) and time.time() < end:
-            pass
-        process.terminate()
-        assert process.wait()
+        try:
+            while 'ready' not in process.stdout.read(5) and time.time() < end:
+                pass
+            process.terminate()
+            assert process.wait()
+        finally:
+            process.stdout.close()
+            process.stderr.close()
         logs = glob.glob(str(project / r'say*.log'))
         assert logs
         for log in logs:
@@ -138,9 +143,13 @@ def test_sigterm_no_log(create_project):
             ['say', 'nothing'], stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, universal_newlines=True)
         end = time.time() + 30
-        while 'ready' not in process.stdout.read(5) and time.time() < end:
-            pass
-        process.terminate()
-        assert process.wait()
+        try:
+            while 'ready' not in process.stdout.read(5) and time.time() < end:
+                pass
+            process.terminate()
+            assert process.wait()
+        finally:
+            process.stdout.close()
+            process.stderr.close()
         logs = glob.glob(str(project / r'say*.log'))
         assert not logs
