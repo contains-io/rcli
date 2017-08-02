@@ -97,7 +97,7 @@ def test_custom_primary_command(create_project, run):
         Usage: hello [--name <name>]
 
         Options:
-            --name <name>  The name to print [default: world].
+          --name <name>  The name to print [default: world].
         '''
     with create_project('''
         def hello(name):
@@ -149,6 +149,24 @@ def test_primary_command_with_dispatch_args(create_project, run):
         assert run('roar --log-level DEBUG rawr') == 'RAWR!\n'
 
 
+def test_merge_primary_command(create_project, run):
+    """Test that a simple primary command is attached to the default doc."""
+    with create_project('''
+        def roar():
+            """usage: roar"""
+            print('ROAR!')
+
+        def rawr():
+            """usage: roar rawr"""
+            print('RAWR!')
+    ''', '''
+        [rcli]
+        merge_primary_command = True
+    '''):
+        assert run('roar') == 'ROAR!\n'
+        assert run('roar rawr') == 'RAWR!\n'
+
+
 def test_subcommand_with_same_name(create_project, run):
     """Test that a command with a subcommand of the same name does not fail."""
     with create_project('''
@@ -165,7 +183,7 @@ def test_dedent(create_project, run):
     usage = """Usage: say hello [--name <name>]
 
             Options:
-                --name <name>  The name to print [default: world].
+              --name <name>  The name to print [default: world].
             """
     with create_project('''
         def hello(name):

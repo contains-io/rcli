@@ -10,25 +10,21 @@ Functions:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from io import open  # pylint: disable=redefined-builtin
 import ast
 import collections
-import inspect
 import json
 import os.path
-import re
 import typing
 
-import docopt
 import setuptools
 import six
+
+from . import usage
 
 
 _EntryPoint = collections.namedtuple(  # All data representing an entry point.
     '_EntryPoint', ('command', 'subcommand', 'callable'))
-
-
-_USAGE_PATTERN = re.compile(r'^([^\n]*usage\:[^\n]*\n?(?:[ \t].*?(?:\n|$))*)',
-                            re.IGNORECASE | re.MULTILINE)
 
 
 def setup_keyword(dist, _, value):
@@ -47,9 +43,11 @@ def setup_keyword(dist, _, value):
     if dist.entry_points is None:
         dist.entry_points = {}
     for command, subcommands in six.iteritems(_get_commands(dist)):
-        dist.entry_points.setdefault('console_scripts', []).append(
-            '{command} = rcli.dispatcher:main'.format(command=command)
-        )
+        entry_point = '{command} = rcli.dispatcher:main'.format(
+            command=command)
+        entry_points = dist.entry_points.setdefault('console_scripts', [])
+        if entry_point not in entry_points:
+            entry_points.append(entry_point)
         dist.entry_points.setdefault('rcli', []).extend(subcommands)
 
 
@@ -186,8 +184,8 @@ def _get_module_commands(module):
     if '__call__' not in methods:
         return
     docstring = ast.get_docstring(module)
-    for command, subcommand in _parse_commands(docstring):
-        yield _EntryPoint(command, subcommand, None)
+    for commands, _ in usage.parse_commands(docstring):
+        yield _EntryPoint(commands[0], next(iter(commands[1:]), None), None)
 
 
 def _get_class_commands(module):
@@ -208,8 +206,9 @@ def _get_class_commands(module):
         methods = (n.name for n in cls.body if isinstance(n, ast.FunctionDef))
         if '__call__' in methods:
             docstring = ast.get_docstring(cls)
-            for command, subcommand in _parse_commands(docstring):
-                yield _EntryPoint(command, subcommand, cls.name)
+            for commands, _ in usage.parse_commands(docstring):
+                yield _EntryPoint(commands[0], next(iter(commands[1:]), None),
+                                  cls.name)
 
 
 def _get_function_commands(module):
@@ -228,38 +227,6 @@ def _get_function_commands(module):
     nodes = (n for n in module.body if isinstance(n, ast.FunctionDef))
     for func in nodes:
         docstring = ast.get_docstring(func)
-        for command, subcommand in _parse_commands(docstring):
-            yield _EntryPoint(command, subcommand, func.name)
-
-
-def _parse_commands(docstring):
-    # type: (str) -> typing.Generator[typing.Tuple[str, str], None, None]
-    """Parse a docopt-style string for commands and subcommands.
-
-    Args:
-        docstring: A docopt-style string to parse. If the string is not a valid
-            docopt-style string, it will not yield and values.
-
-    Yields:
-        All tuples of commands and subcommands found in the docopt docstring.
-    """
-    try:
-        docopt.docopt(docstring, argv=())
-    except (TypeError, docopt.DocoptLanguageError):
-        return
-    except docopt.DocoptExit:
-        pass
-    match = _USAGE_PATTERN.findall(docstring)[0]
-    usage = inspect.cleandoc(match.strip()[6:])
-    usage_sections = [s.strip() for s in usage.split('\n') if s[:1].isalpha()]
-    for section in usage_sections:
-        args = section.split()
-        command = args[0]
-        subcommand = None
-        if len(args) > 1 and not (args[1].startswith('<') or
-                                  args[1].startswith('-') or
-                                  args[1].startswith('[') or
-                                  args[1].startswith('(') or
-                                  args[1].isupper()):
-            subcommand = args[1]
-        yield command, subcommand
+        for commands, _ in usage.parse_commands(docstring):
+            yield _EntryPoint(commands[0], next(iter(commands[1:]), None),
+                              func.name)
