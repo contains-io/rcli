@@ -3,7 +3,6 @@
 
 from __future__ import unicode_literals
 
-from io import open  # pylint: disable=redefined-builtin
 import glob
 import re
 import subprocess

@@ -4,7 +4,6 @@
 
 from __future__ import unicode_literals
 
-from io import open  # pylint: disable=redefined-builtin
 import os.path
 import shutil
 

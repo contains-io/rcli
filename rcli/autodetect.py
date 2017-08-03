@@ -10,7 +10,6 @@ Functions:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from io import open  # pylint: disable=redefined-builtin
 import ast
 import collections
 import json
