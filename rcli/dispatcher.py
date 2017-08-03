@@ -42,6 +42,8 @@ def main():
     allow_subcommands = '<command>' in doc
     args = docopt(doc, version=settings.version,
                   options_first=allow_subcommands)
+    if sys.excepthook is sys.__excepthook__:
+        sys.excepthook = log.excepthook
     try:
         log.enable_logging(log.get_log_level(args))
         default_args = sys.argv[2 if args.get('<command>') else 1:]
@@ -53,11 +55,6 @@ def main():
         return _run_command(argv)
     except exc.InvalidCliValueError as e:
         return str(e)
-    except (KeyboardInterrupt, EOFError):
-        return "Cancelling at the user's request."
-    except Exception as e:  # pylint: disable=broad-except
-        _LOGGER.exception('An unexpected error has occurred.')
-        return log.handle_unexpected_exception(e)
 
 
 def _get_subcommand(name):

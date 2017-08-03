@@ -29,6 +29,7 @@ from . import exceptions as exc
 
 
 _LOGFILE_STREAM = six.StringIO()
+_LOGGER = logging.getLogger(__name__)
 
 
 def write_logfile():
@@ -41,8 +42,23 @@ def write_logfile():
         logfile.write(_LOGFILE_STREAM.getvalue())
 
 
+# pragma pylint: disable=redefined-builtin
+def excepthook(type, value, traceback):  # pylint: disable=unused-argument
+    """Log exceptions instead of printing a traceback to stderr."""
+    try:
+        six.reraise(type, value, traceback)
+    except type:
+        _LOGGER.exception(str(value))
+    if isinstance(value, KeyboardInterrupt):
+        message = "Cancelling at the user's request."
+    else:
+        message = handle_unexpected_exception(value)
+    print(message, file=sys.stderr)
+# pragma pylint: enable=redefined-builtin
+
+
 def handle_unexpected_exception(exc):
-    # type: (Exception) -> typing.Union[str, Exception]
+    # type: (BaseException) -> str
     """Return an error message and write a log file if logging was not enabled.
 
     Args:
@@ -60,7 +76,7 @@ def handle_unexpected_exception(exc):
         message = str(exc)
         return '{}{}{}'.format(message, '\n' if message else '', addendum)
     except Exception:  # pylint: disable=broad-except
-        return exc
+        return str(exc)
 
 
 def enable_logging(log_level):
