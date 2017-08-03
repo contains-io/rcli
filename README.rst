@@ -27,6 +27,7 @@ Features
 - Automatic creation of console scripts and entry points based on usage
   strings.
 - Argument parsing based on usage string.
+- Usage string wrapping.
 - Command line arguments are normalized into python function parameters.
 - Validation of command line arguments using `PEP 484`_ type hints.
 - Logging with multiple levels and crash log generation.
@@ -38,7 +39,6 @@ Upcoming Features
 -----------------
 
 - Automatic generation of bash and zsh autocompletion scripts.
-- Usage string wrapping.
 - Internationalization of usage strings.
 
 
