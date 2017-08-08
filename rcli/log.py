@@ -39,7 +39,17 @@ def write_logfile():
     now = datetime.datetime.now().strftime('%Y%m%d-%H%M%S.%f')
     filename = '{}-{}.log'.format(command, now)
     with open(filename, 'w') as logfile:
-        logfile.write(_LOGFILE_STREAM.getvalue())
+        if six.PY3:
+            logfile.write(_LOGFILE_STREAM.getvalue())
+        else:
+            logfile.write(_LOGFILE_STREAM.getvalue().decode(  # type: ignore
+                errors='replace'))
+
+
+def get():
+    # type: () -> str
+    """Return the logs generated up to this point."""
+    return _LOGFILE_STREAM.getvalue()
 
 
 # pragma pylint: disable=redefined-builtin
