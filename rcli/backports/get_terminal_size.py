@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # pragma pylint: disable=unused-import
-"""An automatic command that handles subcommand dispatch.
+"""Common backported utilities.
 
 Functions:
-    main: The console script entry point set by autodetected CLI scripts.
+    get_terminal_size: Get the size of the terminal.
 """
 
 from __future__ import absolute_import
