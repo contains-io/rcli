@@ -70,9 +70,9 @@ def egg_info_writer(cmd, basename, filename):
     config = dict(parser.items('rcli'))
     for k, v in six.iteritems(config):
         if v.lower() in ('y', 'yes', 'true'):
-            config[k] = True
+            config[k] = True  # type: ignore
         elif v.lower() in ('n', 'no', 'false'):
-            config[k] = False
+            config[k] = False  # type: ignore
         else:
             try:
                 config[k] = json.loads(v)

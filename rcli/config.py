@@ -21,7 +21,7 @@ import sys
 import types
 import typing
 
-from typingplus.types import Singleton
+from typet import Singleton
 import pkg_resources
 import setuptools  # noqa: F401 pylint: disable=unused-import
 import six
@@ -104,6 +104,7 @@ class _RcliConfig(object):
         """The distribution containing the currently active entry point."""
         if self.entry_point:
             return self.entry_point.dist
+        return None
 
     def __getattr__(self, attr):
         # type: (str) -> typing.Any

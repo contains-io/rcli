@@ -72,6 +72,7 @@ def test_py2_annotations(create_project, run):
     """Test type hinting with Python 2 annotations."""
     with create_project('''
         def types(str1, num):
+            # type: (str, int) -> None
             """usage: say types <str1> <num>"""
             print(type(str1))
             print(type(num))
