@@ -104,7 +104,6 @@ class _RcliConfig(object):
         """The distribution containing the currently active entry point."""
         if self.entry_point:
             return self.entry_point.dist
-        return None
 
     def __getattr__(self, attr):
         # type: (str) -> typing.Any
