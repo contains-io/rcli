@@ -11,11 +11,12 @@ from __future__ import unicode_literals
 import logging
 import sys
 import types  # noqa: F401 pylint: disable=unused-import
-import typing  # noqa: F401 pylint: disable=unused-import
+
 
 from docopt import docopt
 import colorama
 import six
+import typingplus as typing
 
 from . import (  # noqa: F401 pylint: disable=unused-import
     exceptions as exc,
@@ -26,6 +27,7 @@ from . import (  # noqa: F401 pylint: disable=unused-import
 )
 from .config import settings
 
+typing.upgrade_typing()
 
 _LOGGER = logging.getLogger(__name__)
 

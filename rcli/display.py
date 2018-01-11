@@ -106,7 +106,7 @@ def display_status():
             raise e.exc  # pylint: disable=raising-bad-type
     except (KeyboardInterrupt, EOFError):
         raise
-    except:
+    except Exception:
         print_status('FAILED', Fore.RED)
         raise
     else:
