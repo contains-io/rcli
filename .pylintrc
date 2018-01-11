@@ -1,0 +1,10 @@
+[MASTER]
+disable=no-value-for-parameter,protected-access,too-few-public-methods,bad-continuation,invalid-name,no-member,locally-disabled,locally-enabled,stop-iteration-return,inconsistent-return-statements
+reports=no
+known-standard-library=typing
+
+[SIMILARITIES]
+min-similarity-lines=10
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=yes
