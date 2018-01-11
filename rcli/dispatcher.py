@@ -12,7 +12,6 @@ import logging
 import sys
 import types  # noqa: F401 pylint: disable=unused-import
 
-
 from docopt import docopt
 import colorama
 import six
