@@ -119,10 +119,10 @@ message::
 .. _PEP 484: https://www.python.org/dev/peps/pep-0484/
 .. _docopt: http://docopt.org/
 
-.. |Build Status| image:: https://travis-ci.org/contains-io/rcli.svg?branch=development
+.. |Build Status| image:: https://travis-ci.org/contains-io/rcli.svg?branch=master
    :target: https://travis-ci.org/contains-io/rcli
-.. |Coverage Status| image:: https://coveralls.io/repos/github/contains-io/rcli/badge.svg?branch=development
-   :target: https://coveralls.io/github/contains-io/rcli?branch=development
+.. |Coverage Status| image:: https://coveralls.io/repos/github/contains-io/rcli/badge.svg?branch=master
+   :target: https://coveralls.io/github/contains-io/rcli?branch=master
 .. |PyPI| image:: https://img.shields.io/pypi/v/rcli.svg
    :target: https://pypi.python.org/pypi/rcli/
 .. |Python Versions| image:: https://img.shields.io/pypi/pyversions/rcli.svg
