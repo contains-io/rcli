@@ -67,12 +67,12 @@ def egg_info_writer(cmd, basename, filename):
     parser.read(setupcfg)
     if not parser.has_section('rcli') or not parser.items('rcli'):
         return
-    config = dict(parser.items('rcli'))
+    config = dict(parser.items('rcli'))  # type: typing.Dict[str, typing.Any]
     for k, v in six.iteritems(config):
         if v.lower() in ('y', 'yes', 'true'):
-            config[k] = True  # type: ignore
+            config[k] = True
         elif v.lower() in ('n', 'no', 'false'):
-            config[k] = False  # type: ignore
+            config[k] = False
         else:
             try:
                 config[k] = json.loads(v)
