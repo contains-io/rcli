@@ -25,7 +25,7 @@ import typing  # noqa: F401 pylint: disable=unused-import
 import colorama
 import six
 
-from . import exceptions as exc
+from . import exceptions
 
 
 _LOGFILE_STREAM = six.StringIO()
@@ -150,7 +150,7 @@ def get_log_level(args):
         sys.argv.remove('--log-level')
         sys.argv.remove(log_level)
     if log_level not in (None, 'DEBUG', 'INFO', 'WARN', 'ERROR'):
-        raise exc.InvalidLogLevelError(log_level)
+        raise exceptions.InvalidLogLevelError(log_level)
     return getattr(logging, log_level) if log_level else None
 
 
