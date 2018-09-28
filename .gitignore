@@ -94,3 +94,5 @@ ENV/
 *.sublime-workspace
 
 .mypy_cache
+.pytest_cache
+*.code-workspace
