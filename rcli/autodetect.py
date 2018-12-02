@@ -12,6 +12,7 @@ from __future__ import unicode_literals
 
 import ast
 import collections
+import configparser
 import json
 import os.path
 import typing
@@ -41,6 +42,13 @@ def setup_keyword(dist, _, value):
         return
     if dist.entry_points is None:
         dist.entry_points = {}
+    elif isinstance(dist.entry_points, str):
+        config = configparser.ConfigParser()
+        config.read_string(dist.entry_points)
+        dist.entry_points = {k: ['='.join(t) for t in v]
+                             for k, v in config.items()
+                             if k != config.default_section}
+
     for command, subcommands in six.iteritems(_get_commands(dist)):
         entry_point = '{command} = rcli.dispatcher:main'.format(
             command=command)
