@@ -12,6 +12,7 @@ from __future__ import unicode_literals
 
 import ast
 import collections
+import configparser
 import json
 import os.path
 import typing
@@ -39,8 +40,8 @@ def setup_keyword(dist, _, value):
     """
     if value is not True:
         return
-    if dist.entry_points is None:
-        dist.entry_points = {}
+    dist.entry_points = _ensure_entry_points_is_dict(dist.entry_points)
+
     for command, subcommands in six.iteritems(_get_commands(dist)):
         entry_point = '{command} = rcli.dispatcher:main'.format(
             command=command)
@@ -48,6 +49,18 @@ def setup_keyword(dist, _, value):
         if entry_point not in entry_points:
             entry_points.append(entry_point)
         dist.entry_points.setdefault('rcli', []).extend(subcommands)
+
+
+def _ensure_entry_points_is_dict(entry_points):
+    if not entry_points:
+        return {}
+    elif isinstance(entry_points, str):
+        config = configparser.ConfigParser()
+        config.read_string(entry_points)
+        return {k: ['='.join(t) for t in section.items()]
+                for k, section in config.items()
+                if k != config.default_section}
+    return entry_points
 
 
 def egg_info_writer(cmd, basename, filename):
