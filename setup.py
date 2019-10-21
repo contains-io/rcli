@@ -27,14 +27,14 @@ setup(
     use_scm_version=True,
     description='A library for rapidly creating command-line tools.',
     long_description=readme,
-    author='Dangle Nuño',
-    author_email='dangle@contains.io',
+    author='Melissa Nuno',
+    author_email='melissa@contains.io',
     url='https://github.com/contains-io/rcli',
     keywords=['docopt', 'commands', 'subcommands', 'tooling', 'cli'],
     license='MIT',
     packages=find_packages(exclude=['tests', 'docs']),
     install_requires=[
-        'typet >= 0.3.5, < 4',
+        'typet >= 0.4, < 0.5',
         'backports.shutil_get_terminal_size',
         'colorama >= 0.3.6, < 1',
         'tqdm >= 4.9.0, < 5'
@@ -61,13 +61,11 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Intended Audience :: Developers',
         'Topic :: Utilities'
     ]
