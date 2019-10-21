@@ -27,11 +27,7 @@ import logging
 import sys
 import time
 
-from colorama import (
-    Cursor,
-    Fore,
-    Style
-)
+from colorama import Cursor, Fore, Style
 from tqdm import tqdm
 
 from .backports.get_terminal_size import get_terminal_size
@@ -64,21 +60,22 @@ class Status(Exception):
 def hidden_cursor():
     """Temporarily hide the terminal cursor."""
     if sys.stdout.isatty():
-        _LOGGER.debug('Hiding cursor.')
-        print('\x1B[?25l', end='')
+        _LOGGER.debug("Hiding cursor.")
+        print("\x1B[?25l", end="")
         sys.stdout.flush()
     try:
         yield
     finally:
         if sys.stdout.isatty():
-            _LOGGER.debug('Showing cursor.')
-            print('\n\x1B[?25h', end='')
+            _LOGGER.debug("Showing cursor.")
+            print("\n\x1B[?25h", end="")
             sys.stdout.flush()
 
 
 @contextlib.contextmanager
 def display_status():
     """Display an OK or FAILED message for the context block."""
+
     def print_status(msg, color):
         """Print the status message.
 
@@ -86,15 +83,17 @@ def display_status():
             msg: The message to display (e.g. OK or FAILED).
             color: The ANSI color code to use in displaying the message.
         """
-        print('\r' if sys.stdout.isatty() else '\t', end='')
-        print('{}{}[{color}{msg}{}]{}'.format(
-            Cursor.FORWARD(_ncols() - 8),
-            Style.BRIGHT,
-            Fore.RESET,
-            Style.RESET_ALL,
-            color=color,
-            msg=msg[:6].upper().center(6)
-        ))
+        print("\r" if sys.stdout.isatty() else "\t", end="")
+        print(
+            "{}{}[{color}{msg}{}]{}".format(
+                Cursor.FORWARD(_ncols() - 8),
+                Style.BRIGHT,
+                Fore.RESET,
+                Style.RESET_ALL,
+                color=color,
+                msg=msg[:6].upper().center(6),
+            )
+        )
         sys.stdout.flush()
 
     try:
@@ -107,10 +106,10 @@ def display_status():
     except (KeyboardInterrupt, EOFError):
         raise
     except Exception:
-        print_status('FAILED', Fore.RED)
+        print_status("FAILED", Fore.RED)
         raise
     else:
-        print_status('OK', Fore.GREEN)
+        print_status("OK", Fore.GREEN)
 
 
 @contextlib.contextmanager
@@ -120,6 +119,7 @@ def timed_display(msg):
     Args:
         msg: The header message to print at the beginning of the timed block.
     """
+
     def print_header(msg, newline=True):
         """Print a header line.
 
@@ -130,10 +130,11 @@ def timed_display(msg):
                 overwrite another.
         """
         if sys.stdout.isatty():
-            print('\r', end=Style.BRIGHT + Fore.BLUE)
-        print(' {} '.format(msg).center(_ncols(), '='),
-              end='\n{}'.format(Style.RESET_ALL)
-              if newline else Style.RESET_ALL)
+            print("\r", end=Style.BRIGHT + Fore.BLUE)
+        print(
+            " {} ".format(msg).center(_ncols(), "="),
+            end="\n{}".format(Style.RESET_ALL) if newline else Style.RESET_ALL,
+        )
         sys.stdout.flush()
 
     def print_message(msg):
@@ -143,9 +144,9 @@ def timed_display(msg):
             msg: The message to display before running the task.
         """
         if sys.stdout.isatty():
-            print('\r', end='')
+            print("\r", end="")
             msg = msg.ljust(_ncols())
-        print(msg, end='')
+        print(msg, end="")
         sys.stdout.flush()
 
     start = time.time()
@@ -155,7 +156,7 @@ def timed_display(msg):
             yield print_message
         finally:
             delta = time.time() - start
-            print_header('completed in {:.2f}s'.format(delta), False)
+            print_header("completed in {:.2f}s".format(delta), False)
 
 
 def run_tasks(header, tasks):
@@ -169,10 +170,15 @@ def run_tasks(header, tasks):
     """
     tasks = list(tasks)
     with timed_display(header) as print_message:
-        with tqdm(tasks, position=1, desc='Progress', disable=None,
-                  bar_format='{desc}{percentage:3.0f}% |{bar}|',
-                  total=sum(t[2] if len(t) > 2 else 1 for t in tasks),
-                  dynamic_ncols=True) as pbar:
+        with tqdm(
+            tasks,
+            position=1,
+            desc="Progress",
+            disable=None,
+            bar_format="{desc}{percentage:3.0f}% |{bar}|",
+            total=sum(t[2] if len(t) > 2 else 1 for t in tasks),
+            dynamic_ncols=True,
+        ) as pbar:
             for task in tasks:
                 print_message(task[0])
                 with display_status():

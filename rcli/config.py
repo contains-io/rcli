@@ -32,11 +32,10 @@ _LOGGER = logging.getLogger(__name__)
 RcliEntryPoint = typing.Union[types.FunctionType, type, types.ModuleType]
 
 
-@six.add_metaclass(Singleton)
-class _RcliConfig(object):
+class _RcliConfig:
     """A global settings object for the command and the configuration."""
 
-    _EP_MOD_NAME = 'rcli.dispatcher'  # The console script entry point module.
+    _EP_MOD_NAME = "rcli.dispatcher"  # The console script entry point module.
 
     def __init__(self):
         # type: () -> None
@@ -46,9 +45,10 @@ class _RcliConfig(object):
         self._version = None  # type: str
         self._entry_point = None  # type: pkg_resources.EntryPoint
         self._config = {}  # type: typing.Dict[str, typing.Any]
-        if (self.distribution and
-                self.distribution.has_metadata('rcli-config.json')):
-            data = self.distribution.get_metadata('rcli-config.json')
+        if self.distribution and self.distribution.has_metadata(
+            "rcli-config.json"
+        ):
+            data = self.distribution.get_metadata("rcli-config.json")
             self._config = json.loads(data)
 
     @property
@@ -57,7 +57,8 @@ class _RcliConfig(object):
         """The name of the active command."""
         if not self._command:
             self._command = os.path.basename(
-                os.path.realpath(os.path.abspath(sys.argv[0])))
+                os.path.realpath(os.path.abspath(sys.argv[0]))
+            )
         return self._command
 
     @property
@@ -65,17 +66,17 @@ class _RcliConfig(object):
         # type: () -> typing.Dict[str, RcliEntryPoint]
         """A mapping of subcommand names to loaded entry point targets."""
         if not self._subcommands:
-            regex = re.compile(r'{}:(?P<name>[^:]+)$'.format(self.command))
-            for ep in pkg_resources.iter_entry_points(group='rcli'):
+            regex = re.compile(r"{}:(?P<name>[^:]+)$".format(self.command))
+            for ep in pkg_resources.iter_entry_points(group="rcli"):
                 try:
                     if ep.name == self.command:
                         self._subcommands[None] = ep.load()
                     else:
                         match = re.match(regex, ep.name)
                         if match:
-                            self._subcommands[match.group('name')] = ep.load()
-                except ImportError:
-                    _LOGGER.exception('Unable to load command. Skipping.')
+                            self._subcommands[match.group("name")] = ep.load()
+                except Exception:
+                    _LOGGER.exception("Unable to load command. Skipping.")
         return self._subcommands
 
     @property
@@ -83,7 +84,7 @@ class _RcliConfig(object):
         # type: () -> str
         """The version defined in the distribution."""
         if not self._version:
-            if hasattr(self.distribution, 'version'):
+            if hasattr(self.distribution, "version"):
                 self._version = str(self.distribution)
         return self._version
 
@@ -92,9 +93,11 @@ class _RcliConfig(object):
         # type: () -> pkg_resources.EntryPoint
         """The currently active entry point."""
         if not self._entry_point:
-            for ep in pkg_resources.iter_entry_points(group='console_scripts'):
-                if (ep.name == self.command and
-                        ep.module_name == self._EP_MOD_NAME):
+            for ep in pkg_resources.iter_entry_points(group="console_scripts"):
+                if (
+                    ep.name == self.command
+                    and ep.module_name == self._EP_MOD_NAME
+                ):
                     self._entry_point = ep
         return self._entry_point
 

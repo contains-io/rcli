@@ -32,9 +32,10 @@ class InvalidCliValueError(RcliError, ValueError):
                 parameter.
         """
         msg = 'Invalid value "{value}" supplied to {parameter}.'.format(
-            parameter=parameter, value=value)
+            parameter=parameter, value=value
+        )
         if valid_values:
-            msg += ' Valid options are: {}'.format(', '.join(valid_values))
+            msg += " Valid options are: {}".format(", ".join(valid_values))
         super(InvalidCliValueError, self).__init__(msg)
 
 
@@ -49,7 +50,7 @@ class InvalidLogLevelError(InvalidCliValueError):
             log_level: The invalid value passed as the log level.
         """
         super(InvalidLogLevelError, self).__init__(
-            '--log-level', log_level, ('DEBUG', 'INFO', 'WARN', 'ERROR')
+            "--log-level", log_level, ("DEBUG", "INFO", "WARN", "ERROR")
         )
 
 
@@ -68,4 +69,5 @@ class CastError(RcliError, TypeError):
         self.type_ = type_
         self.value = value
         super(CastError, self).__init__(
-            'Unable to cast "{}" to {}.'.format(value, type_.__name__))
+            'Unable to cast "{}" to {}.'.format(value, type_.__name__)
+        )

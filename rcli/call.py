@@ -13,23 +13,22 @@ from __future__ import unicode_literals
 from types import (  # noqa: F401 pylint: disable=unused-import
     FunctionType,
     MethodType,
-    ModuleType
+    ModuleType,
 )
-import collections
-import inspect
-import keyword
-import logging
-import re
-
-from typingplus import (  # noqa: F401 pylint: disable=unused-import
+from typing import (  # noqa: F401 pylint: disable=unused-import
     Any,
     Dict,
     Generator,
     Tuple,
     Union,
-    cast,
-    get_type_hints
 )
+
+from typet.typing import cast, get_type_hints
+import collections
+import inspect
+import keyword
+import logging
+import re
 import six
 
 from . import config  # noqa: F401 pylint: disable=unused-import
@@ -38,8 +37,8 @@ from . import exceptions as exc
 
 _LOGGER = logging.getLogger(__name__)
 
-_getspec = getattr(inspect, 'get{}argspec'.format('full' if six.PY3 else ''))
-_ArgSpec = collections.namedtuple('_ArgSpec', ('args', 'varargs', 'varkw'))
+_getspec = getattr(inspect, "get{}argspec".format("full" if six.PY3 else ""))
+_ArgSpec = collections.namedtuple("_ArgSpec", ("args", "varargs", "varkw"))
 
 
 def call(func, args):
@@ -52,10 +51,12 @@ def call(func, args):
     Returns:
         The return value of func.
     """
-    assert hasattr(func, '__call__'), 'Cannot call func: {}'.format(
-        func.__name__)
+    assert hasattr(func, "__call__"), "Cannot call func: {}".format(
+        func.__name__
+    )
     raw_func = (
-        func if isinstance(func, FunctionType) else func.__class__.__call__)
+        func if isinstance(func, FunctionType) else func.__class__.__call__
+    )
     hints = collections.defaultdict(lambda: Any, get_type_hints(raw_func))
     argspec = _getargspec(raw_func)
     named_args = {}
@@ -73,7 +74,8 @@ def call(func, args):
         if nk == argspec.varargs:
             varargs = value
         elif (nk in argspec.args or argspec.varkw) and (
-                nk not in named_args or named_args[nk] is None):
+            nk not in named_args or named_args[nk] is None
+        ):
             named_args[nk] = value
     return func(*varargs, **named_args)
 
@@ -96,11 +98,13 @@ def get_callable(subcommand):
             callable class named Command.
     """
     _LOGGER.debug(
-        'Creating callable from subcommand "%s".', subcommand.__name__)
+        'Creating callable from subcommand "%s".', subcommand.__name__
+    )
     if isinstance(subcommand, ModuleType):
-        _LOGGER.debug('Subcommand is a module.')
-        assert hasattr(subcommand, 'Command'), (
-            'Module subcommand must have callable "Command" class definition.')
+        _LOGGER.debug("Subcommand is a module.")
+        assert hasattr(
+            subcommand, "Command"
+        ), 'Module subcommand must have callable "Command" class definition.'
         callable_ = subcommand.Command  # type: ignore
     else:
         callable_ = subcommand
@@ -148,9 +152,9 @@ def _normalize(args):
         the parameter.
     """
     for k, v in six.iteritems(args):
-        nk = re.sub(r'\W|^(?=\d)', '_', k).strip('_').lower()
+        nk = re.sub(r"\W|^(?=\d)", "_", k).strip("_").lower()
         do_not_shadow = dir(six.moves.builtins)  # type: ignore
         if keyword.iskeyword(nk) or nk in do_not_shadow:
-            nk += '_'
+            nk += "_"
         _LOGGER.debug('Normalized "%s" to "%s".', k, nk)
         yield k, nk, v

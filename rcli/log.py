@@ -36,14 +36,17 @@ def write_logfile():
     # type: () -> None
     """Write a DEBUG log file COMMAND-YYYYMMDD-HHMMSS.ffffff.log."""
     command = os.path.basename(os.path.realpath(os.path.abspath(sys.argv[0])))
-    now = datetime.datetime.now().strftime('%Y%m%d-%H%M%S.%f')
-    filename = '{}-{}.log'.format(command, now)
-    with open(filename, 'w') as logfile:
+    now = datetime.datetime.now().strftime("%Y%m%d-%H%M%S.%f")
+    filename = "{}-{}.log".format(command, now)
+    with open(filename, "w") as logfile:
         if six.PY3:
             logfile.write(_LOGFILE_STREAM.getvalue())
         else:
-            logfile.write(_LOGFILE_STREAM.getvalue().decode(  # type: ignore
-                errors='replace'))
+            logfile.write(
+                _LOGFILE_STREAM.getvalue().decode(  # type: ignore
+                    errors="replace"
+                )
+            )
 
 
 def get():
@@ -64,6 +67,8 @@ def excepthook(type, value, traceback):  # pylint: disable=unused-argument
     else:
         message = handle_unexpected_exception(value)
     print(message, file=sys.stderr)
+
+
 # pragma pylint: enable=redefined-builtin
 
 
@@ -79,12 +84,12 @@ def handle_unexpected_exception(exc):
     """
     try:
         write_logfile()
-        addendum = 'Please see the log file for more information.'
+        addendum = "Please see the log file for more information."
     except IOError:
-        addendum = 'Unable to write log file.'
+        addendum = "Unable to write log file."
     try:
         message = str(exc)
-        return '{}{}{}'.format(message, '\n' if message else '', addendum)
+        return "{}{}{}".format(message, "\n" if message else "", addendum)
     except Exception:  # pylint: disable=broad-except
         return str(exc)
 
@@ -100,8 +105,9 @@ def enable_logging(log_level):
     root_logger.setLevel(logging.DEBUG)
     logfile_handler = logging.StreamHandler(_LOGFILE_STREAM)
     logfile_handler.setLevel(logging.DEBUG)
-    logfile_handler.setFormatter(logging.Formatter(
-        '%(levelname)s [%(asctime)s][%(name)s] %(message)s'))
+    logfile_handler.setFormatter(
+        logging.Formatter("%(levelname)s [%(asctime)s][%(name)s] %(message)s")
+    )
     root_logger.addHandler(logfile_handler)
     if signal.getsignal(signal.SIGTERM) == signal.SIG_DFL:
         signal.signal(signal.SIGTERM, _logfile_sigterm_handler)
@@ -131,25 +137,25 @@ def get_log_level(args):
     """
     index = -1
     log_level = None
-    if '<command>' in args and args['<command>']:
-        index = sys.argv.index(args['<command>'])
-    if args.get('--debug'):
-        log_level = 'DEBUG'
-        if '--debug' in sys.argv and sys.argv.index('--debug') < index:
-            sys.argv.remove('--debug')
-        elif '-d' in sys.argv and sys.argv.index('-d') < index:
-            sys.argv.remove('-d')
-    elif args.get('--verbose'):
-        log_level = 'INFO'
-        if '--verbose' in sys.argv and sys.argv.index('--verbose') < index:
-            sys.argv.remove('--verbose')
-        elif '-v' in sys.argv and sys.argv.index('-v') < index:
-            sys.argv.remove('-v')
-    elif args.get('--log-level'):
-        log_level = args['--log-level']
-        sys.argv.remove('--log-level')
+    if "<command>" in args and args["<command>"]:
+        index = sys.argv.index(args["<command>"])
+    if args.get("--debug"):
+        log_level = "DEBUG"
+        if "--debug" in sys.argv and sys.argv.index("--debug") < index:
+            sys.argv.remove("--debug")
+        elif "-d" in sys.argv and sys.argv.index("-d") < index:
+            sys.argv.remove("-d")
+    elif args.get("--verbose"):
+        log_level = "INFO"
+        if "--verbose" in sys.argv and sys.argv.index("--verbose") < index:
+            sys.argv.remove("--verbose")
+        elif "-v" in sys.argv and sys.argv.index("-v") < index:
+            sys.argv.remove("-v")
+    elif args.get("--log-level"):
+        log_level = args["--log-level"]
+        sys.argv.remove("--log-level")
         sys.argv.remove(log_level)
-    if log_level not in (None, 'DEBUG', 'INFO', 'WARN', 'ERROR'):
+    if log_level not in (None, "DEBUG", "INFO", "WARN", "ERROR"):
         raise exceptions.InvalidLogLevelError(log_level)
     return getattr(logging, log_level) if log_level else None
 
@@ -161,10 +167,12 @@ def _logfile_sigterm_handler(*_):
     Raises:
         SystemExit: Contains the signal as the return code.
     """
-    logging.error('Received SIGTERM.')
+    logging.error("Received SIGTERM.")
     write_logfile()
-    print('Received signal. Please see the log file for more information.',
-          file=sys.stderr)
+    print(
+        "Received signal. Please see the log file for more information.",
+        file=sys.stderr,
+    )
     sys.exit(signal)
 
 
@@ -190,16 +198,17 @@ class _LogColorFormatter(logging.Formatter):
         else:
             color = colorama.Fore.CYAN
         format_template = (
-            '{}{}%(levelname)s{} [%(asctime)s][%(name)s]{} %(message)s')
+            "{}{}%(levelname)s{} [%(asctime)s][%(name)s]{} %(message)s"
+        )
         if sys.stdout.isatty():
             self._fmt = format_template.format(
                 colorama.Style.BRIGHT,
                 color,
                 colorama.Fore.RESET,
-                colorama.Style.RESET_ALL
+                colorama.Style.RESET_ALL,
             )
         else:
-            self._fmt = format_template.format(*[''] * 4)
+            self._fmt = format_template.format(*[""] * 4)
         if six.PY3:
             self._style._fmt = self._fmt  # pylint: disable=protected-access
         return super(_LogColorFormatter, self).format(record)

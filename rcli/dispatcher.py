@@ -11,22 +11,20 @@ from __future__ import unicode_literals
 import logging
 import sys
 import types  # noqa: F401 pylint: disable=unused-import
+import typing  # noqa: F401 pylint: disable=unused-import
 
 from docopt import docopt
 import colorama
 import six
-import typingplus as typing
 
 from . import (  # noqa: F401 pylint: disable=unused-import
     exceptions as exc,
     log,
     call,
     config,
-    usage
+    usage,
 )
 from .config import settings
-
-typing.upgrade_typing()
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,19 +38,22 @@ def main():
     """
     colorama.init(wrap=six.PY3)
     doc = usage.get_primary_command_usage()
-    allow_subcommands = '<command>' in doc
-    args = docopt(doc, version=settings.version,
-                  options_first=allow_subcommands)
+    allow_subcommands = "<command>" in doc
+    args = docopt(
+        doc, version=settings.version, options_first=allow_subcommands
+    )
     if sys.excepthook is sys.__excepthook__:
         sys.excepthook = log.excepthook
     try:
         log.enable_logging(log.get_log_level(args))
-        default_args = sys.argv[2 if args.get('<command>') else 1:]
-        if (args.get('<command>') == 'help' and
-                None not in settings.subcommands):
-            subcommand = next(iter(args.get('<args>', default_args)), None)
+        default_args = sys.argv[2 if args.get("<command>") else 1 :]
+        if (
+            args.get("<command>") == "help"
+            and None not in settings.subcommands
+        ):
+            subcommand = next(iter(args.get("<args>", default_args)), None)
             return usage.get_help_usage(subcommand)
-        argv = [args.get('<command>')] + args.get('<args>', default_args)
+        argv = [args.get("<command>")] + args.get("<args>", default_args)
         return _run_command(argv)
     except exc.InvalidCliValueError as e:
         return str(e)
@@ -71,9 +72,10 @@ def _get_subcommand(name):
     _LOGGER.debug('Accessing subcommand "%s".', name)
     if name not in settings.subcommands:
         raise ValueError(
-            '"{subcommand}" is not a {command} command. \'{command} help -a\' '
-            'lists all available subcommands.'.format(
-                command=settings.command, subcommand=name)
+            "\"{subcommand}\" is not a {command} command. '{command} help -a' "
+            "lists all available subcommands.".format(
+                command=settings.command, subcommand=name
+            )
         )
     return settings.subcommands[name]
 
@@ -95,8 +97,12 @@ def _run_command(argv):
         ValueError: Raised if the user attempted to run an invalid command.
     """
     command_name, argv = _get_command_and_argv(argv)
-    _LOGGER.info('Running command "%s %s" with args: %s', settings.command,
-                 command_name, argv)
+    _LOGGER.info(
+        'Running command "%s %s" with args: %s',
+        settings.command,
+        command_name,
+        argv,
+    )
     subcommand = _get_subcommand(command_name)
     func = call.get_callable(subcommand)
     doc = usage.format_usage(subcommand.__doc__)

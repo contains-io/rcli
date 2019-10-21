@@ -18,7 +18,7 @@ from typing import (  # noqa: F401 pylint: disable=unused-import
     Generator,
     List,
     Optional,
-    Tuple
+    Tuple,
 )
 import collections
 import inspect
@@ -48,16 +48,18 @@ Options:
 {{message}}
 '{command} help -a' lists all available subcommands.
 See '{command} help <command>' for more information on a specific command.
-""".format(command=settings.command)
+""".format(
+    command=settings.command
+)
 
 
-def get_primary_command_usage(message=''):
+def get_primary_command_usage(message=""):
     # type: (str) -> str
     """Return the usage string for the primary command."""
     if not settings.merge_primary_command and None in settings.subcommands:
         return format_usage(settings.subcommands[None].__doc__)
     if not message:
-        message = '\n{}\n'.format(settings.message) if settings.message else ''
+        message = "\n{}\n".format(settings.message) if settings.message else ""
     doc = _DEFAULT_DOC.format(message=message)
     if None in settings.subcommands:
         return _merge_doc(doc, settings.subcommands[None].__doc__)
@@ -80,18 +82,19 @@ def get_help_usage(command):
     """
     if not command:
         doc = get_primary_command_usage()
-    elif command in ('-a', '--all'):
+    elif command in ("-a", "--all"):
         subcommands = [k for k in settings.subcommands if k is not None]
-        available_commands = subcommands + ['help']
-        command_doc = '\nAvailable commands:\n{}\n'.format(
-            '\n'.join('  {}'.format(c) for c in sorted(available_commands)))
+        available_commands = subcommands + ["help"]
+        command_doc = "\nAvailable commands:\n{}\n".format(
+            "\n".join("  {}".format(c) for c in sorted(available_commands))
+        )
         doc = get_primary_command_usage(command_doc)
-    elif command.startswith('-'):
+    elif command.startswith("-"):
         raise ValueError("Unrecognized option '{}'.".format(command))
     elif command in settings.subcommands:
         subcommand = settings.subcommands[command]
         doc = format_usage(subcommand.__doc__)
-    docopt.docopt(doc, argv=('--help',))
+    docopt.docopt(doc, argv=("--help",))
 
 
 def format_usage(doc, width=None):
@@ -105,9 +108,9 @@ def format_usage(doc, width=None):
         The docstring formatted to parse and display to the user. This includes
         dedenting, rewrapping, and translating the docstring if necessary.
     """
-    sections = doc.replace('\r', '').split('\n\n')
+    sections = doc.replace("\r", "").split("\n\n")
     width = width or get_terminal_size().columns or 80
-    return '\n\n'.join(_wrap_section(s.strip(), width) for s in sections)
+    return "\n\n".join(_wrap_section(s.strip(), width) for s in sections)
 
 
 def parse_commands(docstring):
@@ -127,7 +130,7 @@ def parse_commands(docstring):
         return
     except docopt.DocoptExit:
         pass
-    for command in _parse_section('usage', docstring):
+    for command in _parse_section("usage", docstring):
         args = command.split()
         commands = []
         i = 0
@@ -151,16 +154,17 @@ def _merge_doc(original, to_merge):
         A new usage string that contains information from both usage strings.
     """
     if not original:
-        return to_merge or ''
+        return to_merge or ""
     if not to_merge:
-        return original or ''
+        return original or ""
     sections = []
-    for name in ('usage', 'arguments', 'options'):
-        sections.append(_merge_section(
-            _get_section(name, original),
-            _get_section(name, to_merge)
-        ))
-    return format_usage('\n\n'.join(s for s in sections).rstrip())
+    for name in ("usage", "arguments", "options"):
+        sections.append(
+            _merge_section(
+                _get_section(name, original), _get_section(name, to_merge)
+            )
+        )
+    return format_usage("\n\n".join(s for s in sections).rstrip())
 
 
 def _merge_section(original, to_merge):
@@ -176,18 +180,18 @@ def _merge_section(original, to_merge):
         the section lines from both.
     """
     if not original:
-        return to_merge or ''
+        return to_merge or ""
     if not to_merge:
-        return original or ''
+        return original or ""
     try:
-        index = original.index(':') + 1
+        index = original.index(":") + 1
     except ValueError:
-        index = original.index('\n')
+        index = original.index("\n")
     name = original[:index].strip()
-    section = '\n  '.join(
-        (original[index + 1:].lstrip(), to_merge[index + 1:].lstrip())
+    section = "\n  ".join(
+        (original[index + 1 :].lstrip(), to_merge[index + 1 :].lstrip())
     ).rstrip()
-    return '{name}\n  {section}'.format(name=name, section=section)
+    return "{name}\n  {section}".format(name=name, section=section)
 
 
 def _get_section(name, source):
@@ -203,8 +207,9 @@ def _get_section(name, source):
         multiple times, each instance will be merged into a single section.
     """
     pattern = re.compile(
-        '^([^\n]*{name}[^\n]*\n?(?:[ \t].*?(?:\n|$))*)'.format(name=name),
-        re.IGNORECASE | re.MULTILINE)
+        "^([^\n]*{name}[^\n]*\n?(?:[ \t].*?(?:\n|$))*)".format(name=name),
+        re.IGNORECASE | re.MULTILINE,
+    )
     usage = None
     for section in pattern.findall(source):
         usage = _merge_section(usage, section.strip())
@@ -225,14 +230,15 @@ def _wrap_section(source, width):
     Returns:
         The wrapped section string.
     """
-    if _get_section('usage', source):
+    if _get_section("usage", source):
         return _wrap_usage_section(source, width)
     if _is_definition_section(source):
         return _wrap_definition_section(source, width)
     lines = inspect.cleandoc(source).splitlines()
-    paragraphs = (textwrap.wrap(line, width, replace_whitespace=False)
-                  for line in lines)
-    return '\n'.join(line for paragraph in paragraphs for line in paragraph)
+    paragraphs = (
+        textwrap.wrap(line, width, replace_whitespace=False) for line in lines
+    )
+    return "\n".join(line for paragraph in paragraphs for line in paragraph)
 
 
 def _is_definition_section(source):
@@ -245,9 +251,10 @@ def _is_definition_section(source):
         True if the source describes a definition section; otherwise, False.
     """
     try:
-        definitions = textwrap.dedent(source).split('\n', 1)[1].splitlines()
+        definitions = textwrap.dedent(source).split("\n", 1)[1].splitlines()
         return all(
-            re.match(r'\s\s+((?!\s\s).+)\s\s+.+', s) for s in definitions)
+            re.match(r"\s\s+((?!\s\s).+)\s\s+.+", s) for s in definitions
+        )
     except IndexError:
         return False
 
@@ -268,16 +275,16 @@ def _wrap_usage_section(source, width):
     """
     if not any(len(line) > width for line in source.splitlines()):
         return source
-    section_header = source[:source.index(':') + 1].strip()
+    section_header = source[: source.index(":") + 1].strip()
     lines = [section_header]
     for commands, args in parse_commands(source):
-        command = '  {} '.format(' '.join(commands))
+        command = "  {} ".format(" ".join(commands))
         max_len = width - len(command)
-        sep = '\n' + ' ' * len(command)
-        wrapped_args = sep.join(textwrap.wrap(' '.join(args), max_len))
+        sep = "\n" + " " * len(command)
+        wrapped_args = sep.join(textwrap.wrap(" ".join(args), max_len))
         full_command = command + wrapped_args
         lines += full_command.splitlines()
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 def _wrap_definition_section(source, width):
@@ -293,18 +300,18 @@ def _wrap_definition_section(source, width):
     Returns:
         The wrapped section string.
     """
-    index = source.index('\n') + 1
+    index = source.index("\n") + 1
     definitions, max_len = _get_definitions(source[index:])
-    sep = '\n' + ' ' * (max_len + 4)
+    sep = "\n" + " " * (max_len + 4)
     lines = [source[:index].strip()]
     for arg, desc in six.iteritems(definitions):
         wrapped_desc = sep.join(textwrap.wrap(desc, width - max_len - 4))
-        lines.append('  {arg:{size}}  {desc}'.format(
-            arg=arg,
-            size=str(max_len),
-            desc=wrapped_desc
-        ))
-    return '\n'.join(lines)
+        lines.append(
+            "  {arg:{size}}  {desc}".format(
+                arg=arg, size=str(max_len), desc=wrapped_desc
+            )
+        )
+    return "\n".join(lines)
 
 
 def _get_definitions(source):
@@ -325,7 +332,7 @@ def _get_definitions(source):
     non_empty_lines = (s for s in lines if s)
     for line in non_empty_lines:
         if line:
-            arg, desc = re.split(r'\s\s+', line.strip())
+            arg, desc = re.split(r"\s\s+", line.strip())
             arg_len = len(arg)
             if arg_len > max_len:
                 max_len = arg_len
@@ -357,5 +364,5 @@ def _parse_section(name, source):
         if not commands or line[:1].isalpha() and line[:1].islower():
             commands.append(line)
         else:
-            commands[-1] = '{} {}'.format(commands[-1].strip(), line.strip())
+            commands[-1] = "{} {}".format(commands[-1].strip(), line.strip())
     return commands
