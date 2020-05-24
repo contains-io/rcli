@@ -159,17 +159,6 @@ def timed_display(msg):
             print_header("completed in {:.2f}s".format(delta), False)
 
 
-def line(char="\u2500", start="\u2500", end="\u2500"):
-    print(start, char * _ncols() - 2, end)
-
-
-@contextlib.contextmanager
-def box():
-    line(start="\u250F", end="\u2513")
-    yield
-    line(start="\u2517", end="\u251B")
-
-
 def run_tasks(header, tasks):
     """Run a group of tasks with a header, footer and success/failure messages.
 

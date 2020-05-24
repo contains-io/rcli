@@ -70,6 +70,9 @@ class Box:
         size=None,
         header="",
         header_style=None,
+        footer="",
+        footer_style=None,
+        sep_style=None,
     ):
         self._upper_left = upper_left
         self._upper_right = upper_right
@@ -82,7 +85,10 @@ class Box:
         self._sep_right = sep_right
         self._size = size
         self._header = header
-        self.header_style = header_style
+        self._header_style = header_style
+        self._footer = footer
+        self._footer_style = footer_style
+        self._sep_style = sep_style
 
     def top(self, text=""):
         with Style.current():
@@ -91,7 +97,7 @@ class Box:
                     self._horizontal,
                     self._upper_left,
                     f"{self._upper_right}{Style.reset}",
-                    self.header_style(text) if self.header_style else text,
+                    self._header_style(text) if self._header_style else text,
                 ),
                 flush=True,
             )
@@ -99,13 +105,14 @@ class Box:
     def sep(self, text=""):
         print(self._get_sep(text), sep="", flush=True)
 
-    def bottom(self):
+    def bottom(self, text=""):
         with Style.current():
             print(
                 self._line(
                     self._horizontal,
                     self._lower_left,
                     f"{self._lower_right}{Style.reset}",
+                    self._footer_style(text) if self._footer_style else text,
                 ),
                 flush=True,
             )
@@ -124,7 +131,10 @@ class Box:
 
     def _get_sep(self, text=""):
         return self._line(
-            self._sep_horizontal, self._sep_left, self._sep_right, text
+            self._sep_horizontal,
+            self._sep_left,
+            self._sep_right,
+            self._sep_style(text) if self._sep_style else text,
         )
 
     def __enter__(self):
@@ -135,7 +145,7 @@ class Box:
 
     def __exit__(self, *args, **kwargs):
         Box._stack.pop()
-        self.bottom()
+        self.bottom(self._footer)
         Box._depth -= 1
 
     @staticmethod
@@ -148,6 +158,7 @@ class Box:
             if "size" in kw:
                 impl._size = kw["size"]
             impl._header = kw.get("header", "")
+            impl._footer = kw.get("footer", "")
             with impl, contextlib.redirect_stdout(impl._create_buffer()):
                 yield impl
 
@@ -166,6 +177,8 @@ Box.thick = Box.new_style(
     "\u2501",
     "\u252B",
     header_style=Style.bold,
+    footer_style=Style.bold,
+    sep_style=Style.bold,
 )
 Box.info = Box.new_style(
     "\u250F",
