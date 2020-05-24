@@ -4,7 +4,7 @@ import functools
 from . import terminal
 from .io import AppendIOBase
 from .util import visible_len, remove_invisible_characters
-from .style import Style, Reset
+from .style import Style
 
 
 class _BoxIO(AppendIOBase):
@@ -27,11 +27,14 @@ class _BoxIO(AppendIOBase):
             current_style = self._style
         left = " ".join(f"{box[1]}{box[0]._vertical}" for box in stack)
         left += " " if left else ""
-        return functools.reduce(
-            lambda r, b: self._get_right_append(r, b[0], *b[1]),
-            zip(range(len(stack) - 1, -1, -1), reversed(stack)),
-            f"{self._style}{left}{current_style}{s}{self._style}",
-        ) + str(Reset())
+        return (
+            functools.reduce(
+                lambda r, b: self._get_right_append(r, b[0], *b[1]),
+                zip(range(len(stack) - 1, -1, -1), reversed(stack)),
+                f"{self._style}{left}{current_style}{s}{self._style}",
+            )
+            + Style.reset
+        )
 
     def _is_sep(self, s):
         cleaned_s = remove_invisible_characters(s)
@@ -65,6 +68,8 @@ class Box:
         sep_horizontal="\u2500",
         sep_right="\u2524",
         size=None,
+        header="",
+        header_style=None,
     ):
         self._upper_left = upper_left
         self._upper_right = upper_right
@@ -76,20 +81,23 @@ class Box:
         self._sep_horizontal = sep_horizontal
         self._sep_right = sep_right
         self._size = size
+        self._header = header
+        self.header_style = header_style
 
-    def top(self):
+    def top(self, text=""):
         with Style.current():
             print(
                 self._line(
                     self._horizontal,
                     self._upper_left,
-                    self._upper_right + str(Reset()),
+                    f"{self._upper_right}{Style.reset}",
+                    self.header_style(text) if self.header_style else text,
                 ),
                 flush=True,
             )
 
     def sep(self, text=""):
-        print(self._get_sep(), sep="", flush=True)
+        print(self._get_sep(text), sep="", flush=True)
 
     def bottom(self):
         with Style.current():
@@ -97,18 +105,19 @@ class Box:
                 self._line(
                     self._horizontal,
                     self._lower_left,
-                    self._lower_right + str(Reset()),
+                    f"{self._lower_right}{Style.reset}",
                 ),
                 flush=True,
             )
 
-    def _set_size(self, size):
-        self._size = size
-
     def _line(self, char, start, end, text=""):
         size = self._size or terminal.cols()
-        width = size - 4 * (Box._depth - 1)
-        return f"{start}{char * (width - 2)}{end}"
+        vislen = visible_len(text)
+        if vislen:
+            text = f" {text} "
+            vislen += 2
+        width = size - 4 * (Box._depth - 1) - vislen - 2
+        return f"{start}{char}{text}{char * (width - 2)}{char}{end}"
 
     def _create_buffer(self):
         return _BoxIO(self)
@@ -120,7 +129,7 @@ class Box:
 
     def __enter__(self):
         Box._depth += 1
-        self.top()
+        self.top(self._header)
         Box._stack.append((self, Style.current()))
         return self
 
@@ -135,9 +144,10 @@ class Box:
         def inner(**kw):
             impl = Box(*args, **kwargs)
             if Box._stack:
-                impl._set_size(Box._stack[-1][0]._size)
+                impl._size = Box._stack[-1][0]._size
             if "size" in kw:
-                impl._set_size(kw["size"])
+                impl._size = kw["size"]
+            impl._header = kw.get("header", "")
             with impl, contextlib.redirect_stdout(impl._create_buffer()):
                 yield impl
 
@@ -155,6 +165,7 @@ Box.thick = Box.new_style(
     "\u2523",
     "\u2501",
     "\u252B",
+    header_style=Style.bold,
 )
 Box.info = Box.new_style(
     "\u250F",

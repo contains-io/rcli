@@ -20,7 +20,7 @@ class Color:
         return f"48;5;{self._color}"
 
 
-class Reset:
+class _Reset:
     def __str__(self):
         return str(colorama.Style.RESET_ALL)
 
@@ -30,8 +30,15 @@ class Reset:
     def __exit__(self, *args, **kwargs):
         pass
 
+    def __add__(self, s):
+        return str(self) + s
+
+    def __radd__(self, s):
+        return s + str(self)
+
 
 class Style:
+    reset = _Reset()
     __stack = []
 
     def __init__(
@@ -91,6 +98,15 @@ class Style:
             return f"{on};"
         return ""
 
+    def __add__(self, s):
+        return str(self) + s
+
+    def __radd__(self, s):
+        return s + str(self)
+
+    def __call__(self, s):
+        return f"{self.reset}{self.full_style(self)}{s}{self.current()}"
+
     def __enter__(self):
         self.__stack.append(self.full_style(self))
         print(self.current(), end="")
@@ -111,24 +127,18 @@ class Style:
 
     @classmethod
     def current(cls):
-        return cls.__stack[-1] if cls.__stack else Reset()
+        return cls.__stack[-1] if cls.__stack else cls.reset
 
 
-default = Style(
-    colorama.ansi.AnsiFore.RESET,
-    colorama.ansi.AnsiBack.RESET,
-    False,
-    False,
-    False,
-    False,
-    False,
-    False,
-    False,
-)
-bold = bright = Style(bold=True)
-dim = Style(dim=True)
-italic = Style(italic=True)
-underlined = Style(underlined=True)
-blink = Style(blink=True)
-reverse = Style(reverse=True)
-hidden = Style(hidden=True)
+Style.default = Style.reset
+Style.bold = bright = Style(bold=True)
+Style.dim = Style(dim=True)
+Style.italic = Style(italic=True)
+Style.underlined = Style(underlined=True)
+Style.blink = Style(blink=True)
+Style.reverse = Style(reverse=True)
+Style.hidden = Style(hidden=True)
+
+
+def styled(text, *args, **kwargs):
+    return Style(*args, **kwargs)(text)
