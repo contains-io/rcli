@@ -4,6 +4,12 @@ import typing
 import colorama
 
 
+class Alignment:
+    LEFT = 0
+    CENTER = 1
+    RIGHT = 2
+
+
 class Color:
     def __init__(self, color):
         if color < 0 or color > 256:

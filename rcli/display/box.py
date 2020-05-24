@@ -3,8 +3,8 @@ import functools
 
 from . import terminal
 from .io import AppendIOBase
-from .util import visible_len, remove_invisible_characters
-from .style import Style
+from .util import remove_invisible_characters, visible_len
+from .style import Alignment, Style
 
 
 class _BoxIO(AppendIOBase):
@@ -69,8 +69,12 @@ class Box:
         sep_right="\u2524",
         size=None,
         header="",
-        header_style=None,
         footer="",
+        align=Alignment.LEFT,
+        header_align=None,
+        footer_align=None,
+        sep_align=None,
+        header_style=None,
         footer_style=None,
         sep_style=None,
     ):
@@ -85,12 +89,15 @@ class Box:
         self._sep_right = sep_right
         self._size = size
         self._header = header
-        self._header_style = header_style
         self._footer = footer
+        self._header_align = header_align or align
+        self._footer_align = footer_align or align
+        self._sep_align = sep_align or align
+        self._header_style = header_style
         self._footer_style = footer_style
         self._sep_style = sep_style
 
-    def top(self, text=""):
+    def top(self, text="", align=None):
         with Style.current():
             print(
                 self._line(
@@ -98,14 +105,15 @@ class Box:
                     self._upper_left,
                     f"{self._upper_right}{Style.reset}",
                     self._header_style(text) if self._header_style else text,
+                    align,
                 ),
                 flush=True,
             )
 
-    def sep(self, text=""):
-        print(self._get_sep(text), sep="", flush=True)
+    def sep(self, text="", align=None):
+        print(self._get_sep(text, align=None), sep="", flush=True)
 
-    def bottom(self, text=""):
+    def bottom(self, text="", align=None):
         with Style.current():
             print(
                 self._line(
@@ -113,39 +121,45 @@ class Box:
                     self._lower_left,
                     f"{self._lower_right}{Style.reset}",
                     self._footer_style(text) if self._footer_style else text,
+                    align,
                 ),
                 flush=True,
             )
 
-    def _line(self, char, start, end, text=""):
+    def _line(self, char, start, end, text="", align=None):
         size = self._size or terminal.cols()
         vislen = visible_len(text)
         if vislen:
             text = f" {text} "
             vislen += 2
-        width = size - 4 * (Box._depth - 1) - vislen - 2
-        return f"{start}{char}{text}{char * (width - 2)}{char}{end}"
+        width = size - 4 * (Box._depth - 1) - vislen - 4
+        if align == Alignment.CENTER:
+            pass
+        if align == Alignment.RIGHT:
+            pass
+        return f"{start}{char}{text}{char * width}{char}{end}"
 
     def _create_buffer(self):
         return _BoxIO(self)
 
-    def _get_sep(self, text=""):
+    def _get_sep(self, text="", align=None):
         return self._line(
             self._sep_horizontal,
             self._sep_left,
             self._sep_right,
             self._sep_style(text) if self._sep_style else text,
+            align,
         )
 
     def __enter__(self):
         Box._depth += 1
-        self.top(self._header)
+        self.top(self._header, self._header_align)
         Box._stack.append((self, Style.current()))
         return self
 
     def __exit__(self, *args, **kwargs):
         Box._stack.pop()
-        self.bottom(self._footer)
+        self.bottom(self._footer, self._footer_align)
         Box._depth -= 1
 
     @staticmethod
@@ -158,7 +172,13 @@ class Box:
             if "size" in kw:
                 impl._size = kw["size"]
             impl._header = kw.get("header", "")
+            impl._header_align = kw.get(
+                "header_align", kw.get("align", impl._header_align)
+            )
             impl._footer = kw.get("footer", "")
+            impl._footer_align = kw.get(
+                "footer_align", kw.get("align", impl._footer_align)
+            )
             with impl, contextlib.redirect_stdout(impl._create_buffer()):
                 yield impl
 
