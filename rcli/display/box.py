@@ -7,7 +7,7 @@ from .util import visible_len, remove_invisible_characters
 from .style import Style, Reset
 
 
-class BoxIO(AppendIOBase):
+class _BoxIO(AppendIOBase):
     def __init__(self, box_):
         super().__init__()
         self._box = box_
@@ -15,19 +15,29 @@ class BoxIO(AppendIOBase):
         self._sep = remove_invisible_characters(self._box._get_sep())
 
     def write(self, s):
-        super().write(f"{Style.current() if s != self._sep else ''}{s}")
+        super().write(
+            f"{self._style if self._is_sep(s) else Style.current()}{s}"
+        )
 
     def update_line(self, s):
+        stack = Box._stack
         current_style = Style.current()
-        cleaned_s = remove_invisible_characters(s)
-        if cleaned_s[:2] == self._sep[:2] and cleaned_s[-2:] == self._sep[-2:]:
-            return f"{self._style}{s}{current_style}"
-        left = " ".join(f"{box[1]}{box[0]._vertical}" for box in Box._stack)
+        if self._is_sep(s):
+            stack = Box._stack[:-1]
+            current_style = self._style
+        left = " ".join(f"{box[1]}{box[0]._vertical}" for box in stack)
+        left += " " if left else ""
         return functools.reduce(
             lambda r, b: self._get_right_append(r, b[0], *b[1]),
-            zip(range(len(Box._stack) - 1, -1, -1), reversed(Box._stack)),
-            f"{self._style}{left} {current_style}{s}{self._style}",
-        ) + str(current_style)
+            zip(range(len(stack) - 1, -1, -1), reversed(stack)),
+            f"{self._style}{left}{current_style}{s}{self._style}",
+        ) + str(Reset())
+
+    def _is_sep(self, s):
+        cleaned_s = remove_invisible_characters(s)
+        return (
+            cleaned_s[:2] == self._sep[:2] and cleaned_s[-2:] == self._sep[-2:]
+        )
 
     def _get_right_append(self, current, i, box_, style):
         num_spaces = (
@@ -68,27 +78,29 @@ class Box:
         self._size = size
 
     def top(self):
-        print(
-            self._line(
-                self._horizontal,
-                self._upper_left,
-                self._upper_right + str(Reset()),
-            ),
-            flush=True,
-        )
+        with Style.current():
+            print(
+                self._line(
+                    self._horizontal,
+                    self._upper_left,
+                    self._upper_right + str(Reset()),
+                ),
+                flush=True,
+            )
 
     def sep(self):
         print(self._get_sep(), sep="", flush=True)
 
     def bottom(self):
-        print(
-            self._line(
-                self._horizontal,
-                self._lower_left,
-                self._lower_right + str(Reset()),
-            ),
-            flush=True,
-        )
+        with Style.current():
+            print(
+                self._line(
+                    self._horizontal,
+                    self._lower_left,
+                    self._lower_right + str(Reset()),
+                ),
+                flush=True,
+            )
 
     def _set_size(self, size):
         self._size = size
@@ -99,7 +111,7 @@ class Box:
         return f"{start}{char * (width - 2)}{end}"
 
     def _create_buffer(self):
-        return BoxIO(self)
+        return _BoxIO(self)
 
     def _get_sep(self):
         return self._line(
