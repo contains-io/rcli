@@ -30,7 +30,7 @@ import time
 from colorama import Cursor, Fore, Style
 from tqdm import tqdm
 
-from .backports.get_terminal_size import get_terminal_size
+from .terminal import cols as _ncols
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -186,12 +186,3 @@ def run_tasks(header, tasks):
                         task[1]()
                     finally:
                         pbar.update(task[2] if len(task) > 2 else 1)
-
-
-def _ncols():
-    """Get the current number of columns on the terminal.
-
-    Returns:
-        The current number of columns in the terminal or 80 if there is no tty.
-    """
-    return get_terminal_size().columns or 80

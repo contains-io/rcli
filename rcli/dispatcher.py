@@ -15,7 +15,6 @@ import typing  # noqa: F401 pylint: disable=unused-import
 
 from docopt import docopt
 import colorama
-import six
 
 from . import (  # noqa: F401 pylint: disable=unused-import
     exceptions as exc,
@@ -36,7 +35,7 @@ def main():
     If the command is 'help' then print the help message for the subcommand; if
     no subcommand is given, print the standard help message.
     """
-    colorama.init(wrap=six.PY3)
+    colorama.init(strip=not sys.stdout.isatty())
     doc = usage.get_primary_command_usage()
     allow_subcommands = "<command>" in doc
     args = docopt(
