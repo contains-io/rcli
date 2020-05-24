@@ -186,4 +186,16 @@ def test_box_with_headers():
     ) as b:
         print("Test 20")
         b.sep("Test 20", align=Alignment.CENTER)
+        b.sep(" Test 20", align=Alignment.CENTER)
+        b.sep("Test 20 ", align=Alignment.CENTER)
         print("Test 20")
+
+
+def test_box_with_headers_single_align():
+    print()
+    with Box.thick(
+        header="Test 21", footer="Test 21", align=Alignment.CENTER
+    ) as b:
+        print("Test 21")
+        b.sep("Test 21")
+        print("Test 21")

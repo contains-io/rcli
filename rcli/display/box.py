@@ -111,7 +111,9 @@ class Box:
             )
 
     def sep(self, text="", align=None):
-        print(self._get_sep(text, align=None), sep="", flush=True)
+        print(
+            self._get_sep(text, align or self._sep_align), sep="", flush=True
+        )
 
     def bottom(self, text="", align=None):
         with Style.current():
@@ -134,9 +136,9 @@ class Box:
             vislen += 2
         width = size - 4 * (Box._depth - 1) - vislen - 4
         if align == Alignment.CENTER:
-            pass
+            return f"{start}{char}{char * int(width / 2 + .5)}{text}{char * int(width / 2)}{char}{end}"
         if align == Alignment.RIGHT:
-            pass
+            return f"{start}{char}{char * width}{text}{char}{end}"
         return f"{start}{char}{text}{char * width}{char}{end}"
 
     def _create_buffer(self):
@@ -178,6 +180,9 @@ class Box:
             impl._footer = kw.get("footer", "")
             impl._footer_align = kw.get(
                 "footer_align", kw.get("align", impl._footer_align)
+            )
+            impl._sep_align = kw.get(
+                "sep_align", kw.get("align", impl._sep_align)
             )
             with impl, contextlib.redirect_stdout(impl._create_buffer()):
                 yield impl
