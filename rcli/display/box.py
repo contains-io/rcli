@@ -88,7 +88,7 @@ class Box:
                 flush=True,
             )
 
-    def sep(self):
+    def sep(self, text=""):
         print(self._get_sep(), sep="", flush=True)
 
     def bottom(self):
@@ -105,7 +105,7 @@ class Box:
     def _set_size(self, size):
         self._size = size
 
-    def _line(self, char, start, end):
+    def _line(self, char, start, end, text=""):
         size = self._size or terminal.cols()
         width = size - 4 * (Box._depth - 1)
         return f"{start}{char * (width - 2)}{end}"
@@ -113,9 +113,9 @@ class Box:
     def _create_buffer(self):
         return _BoxIO(self)
 
-    def _get_sep(self):
+    def _get_sep(self, text=""):
         return self._line(
-            self._sep_horizontal, self._sep_left, self._sep_right
+            self._sep_horizontal, self._sep_left, self._sep_right, text
         )
 
     def __enter__(self):
@@ -134,6 +134,8 @@ class Box:
         @contextlib.contextmanager
         def inner(**kw):
             impl = Box(*args, **kwargs)
+            if Box._stack:
+                impl._set_size(Box._stack[-1][0]._size)
             if "size" in kw:
                 impl._set_size(kw["size"])
             with impl, contextlib.redirect_stdout(impl._create_buffer()):
