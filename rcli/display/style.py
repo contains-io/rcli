@@ -1,103 +1,7 @@
 import copy
-import types
+import typing
 
 import colorama
-
-
-class Style:
-    __stack = []
-
-    def __init__(
-        self,
-        foreground: types.Option[Color, str, int] = None,
-        background: types.Option[Color, str, int] = None,
-        bold: bool = None,
-        italic: bool = None,
-        dim: bool = None,
-        underlined: bool = None,
-        blink: bool = None,
-        reverse: bool = None,
-        hidden: bool = None,
-    ):
-        if str(foreground).startswith("\033["):
-            self.foreground = str(foreground).strip("\033[m")
-        else:
-            self.foreground = str(foreground)
-        if str(background).startswith("\033["):
-            self.background = str(background).strip("\033[m")
-        elif isinstance(background, int):
-            self.background = str(background)
-        else:
-            self.background = background.background()
-        self.bold = bold
-        self.dim = dim
-        self.italic = italic
-        self.underlined = underlined
-        self.blink = blink
-        self.reverse = reverse
-        self.hidden = hidden
-
-    def __str__(self):
-        value = "{escape}{}{}{}{}{}{}{}{}{}".format(
-            self._value(self.foreground, None, "foreground"),
-            self._value(self.background, None, "background",),
-            self._value(1, 21, "bold"),
-            self._value(2, 22, "dim"),
-            self._value(3, 23, "italic"),
-            self._value(4, 24, "underlined"),
-            self._value(5, 25, "blink"),
-            self._value(7, 27, "reverse"),
-            self._value(8, 28, "hidden"),
-            escape=colorama.ansi.CSI,
-        )
-        return f"{value[:-1]}m"
-
-    def _value(self, on, off, param):
-        value = getattr(self, param, None)
-        if value is False and off is not None:
-            return f"{off};"
-        if value is not None and on is not None:
-            return f"{on};"
-        return ""
-
-    def __enter__(self):
-        self.__stack.append(self.full_style(self))
-        print(colorama.Style.RESET_ALL, end="")
-        print(self.current(), end="")
-
-    def __exit__(self, *args, **kwargs):
-        self.__stack.pop()
-        print(colorama.Style.RESET_ALL, end="")
-        print(self.current(), end="")
-
-    @classmethod
-    def full_style(cls, style):
-        full_style = copy.deepcopy(style)
-        if cls.__stack:
-            current = cls.current()
-            if full_style.foreground == None:
-                full_style.foreground = current.foreground
-            if full_style.background == None:
-                full_style.background = current.background
-            if full_style.bold == None:
-                full_style.bold = current.bold
-            if full_style.italic == None:
-                full_style.italic = current.italic
-            if full_style.dim == None:
-                full_style.dim = current.dim
-            if full_style.underlined == None:
-                full_style.underlined = current.underlined
-            if full_style.blink == None:
-                full_style.blink = current.blink
-            if full_style.reverse == None:
-                full_style.reverse = current.reverse
-            if full_style.hidden == None:
-                full_style.hidden = current.hidden
-        return full_style
-
-    @classmethod
-    def current(cls):
-        return cls.__stack[-1] if cls.__stack else colorama.Style.RESET_ALL
 
 
 class Color:
@@ -116,6 +20,111 @@ class Color:
         return f"48;5;{self._color}"
 
 
+class Reset:
+    def __str__(self):
+        return str(colorama.Style.RESET_ALL)
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, *args, **kwargs):
+        pass
+
+
+class Style:
+    __stack = []
+
+    def __init__(
+        self,
+        foreground: typing.Union[Color, str, int] = None,
+        background: typing.Union[Color, str, int] = None,
+        bold: bool = None,
+        italic: bool = None,
+        dim: bool = None,
+        underlined: bool = None,
+        blink: bool = None,
+        reverse: bool = None,
+        hidden: bool = None,
+        reset: bool = True,
+    ):
+        self.foreground = str(foreground) if foreground else None
+        self.background = str(background) if background else None
+        if hasattr(background, "background"):
+            self.background = background.background()
+        if str(foreground).startswith("\033["):
+            self.foreground = str(foreground).strip("\033[m")
+        if str(background).startswith("\033["):
+            self.background = str(background).strip("\033[m")
+        self.bold = bold
+        self.dim = dim
+        self.italic = italic
+        self.underlined = underlined
+        self.blink = blink
+        self.reverse = reverse
+        self.hidden = hidden
+        self._reset = reset
+
+    def __str__(self):
+        value = "{}{}{}{}{}{}{}{}{}{}{}".format(
+            colorama.Style.RESET_ALL if self._reset else "",
+            colorama.ansi.CSI,
+            self._value(self.foreground, None, "foreground"),
+            self._value(self.background, None, "background",),
+            self._value(1, 21, "bold"),
+            self._value(2, 22, "dim"),
+            self._value(3, 23, "italic"),
+            self._value(4, 24, "underlined"),
+            self._value(5, 25, "blink"),
+            self._value(7, 27, "reverse"),
+            self._value(8, 28, "hidden"),
+        )
+        return f"{value[:-1]}m"
+
+    def __repr__(self):
+        return str(list(str(self)))
+
+    def _value(self, on, off, param):
+        value = getattr(self, param, None)
+        if value is False and off is not None:
+            return f"{off};"
+        if value is not None and on is not None:
+            return f"{on};"
+        return ""
+
+    def __enter__(self):
+        self.__stack.append(self.full_style(self))
+        print(self.current(), end="")
+
+    def __exit__(self, *args, **kwargs):
+        self.__stack.pop()
+        print(self.current(), end="")
+
+    @classmethod
+    def full_style(cls, style):
+        full_style = copy.deepcopy(style)
+        if cls.__stack:
+            current = cls.current()
+            for attr in vars(full_style):
+                if getattr(full_style, attr, None) is None:
+                    setattr(full_style, attr, getattr(current, attr, None))
+        return full_style
+
+    @classmethod
+    def current(cls):
+        return cls.__stack[-1] if cls.__stack else Reset()
+
+
+default = Style(
+    colorama.ansi.AnsiFore.RESET,
+    colorama.ansi.AnsiBack.RESET,
+    False,
+    False,
+    False,
+    False,
+    False,
+    False,
+    False,
+)
 bold = bright = Style(bold=True)
 dim = Style(dim=True)
 italic = Style(italic=True)
