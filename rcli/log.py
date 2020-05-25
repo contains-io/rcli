@@ -10,10 +10,6 @@ Functions:
         log level passed in by the user on the command line.
 """
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import unicode_literals
-
 from io import open  # pylint: disable=redefined-builtin
 import datetime
 import logging

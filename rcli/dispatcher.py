@@ -5,9 +5,6 @@ Functions:
     main: The console script entry point set by autodetected CLI scripts.
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 import logging
 import sys
 import types  # noqa: F401 pylint: disable=unused-import

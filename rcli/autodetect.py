@@ -7,9 +7,6 @@ Functions:
         egg info file.
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 import ast
 import collections
 import configparser
@@ -105,7 +102,7 @@ def egg_info_writer(cmd, basename, filename):
 
 
 def _get_commands(
-    dist  # type: setuptools.dist.Distribution
+    dist,  # type: setuptools.dist.Distribution
 ):
     # type: (...) -> typing.Dict[str, typing.Set[str]]
     """Find all commands belonging to the given distribution.

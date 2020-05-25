@@ -7,15 +7,18 @@ def test_ensure_entry_points_is_dict_works_with_none():
 
 def test_ensure_entry_points_is_dict_works_with_dict():
     expected = {
-        'console_scripts': ['foobarbaz=foo.bar:baz'],
+        "console_scripts": ["foobarbaz=foo.bar:baz"],
     }
     assert _ensure_entry_points_is_dict(expected) == expected
 
 
 def test_ensure_entry_points_is_dict_works_with_str():
-    assert _ensure_entry_points_is_dict('''
+    assert (
+        _ensure_entry_points_is_dict(
+            """
     [console_scripts]
     foobarbaz=foo.bar:baz
-    ''') == {
-        'console_scripts': ['foobarbaz=foo.bar:baz'],
-    }
+    """
+        )
+        == {"console_scripts": ["foobarbaz=foo.bar:baz"],}
+    )

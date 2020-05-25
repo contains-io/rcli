@@ -9,8 +9,6 @@ Classes:
         dealing with invalid log level values.
 """
 
-from __future__ import absolute_import
-
 import typing  # noqa: F401 pylint: disable=unused-import
 
 

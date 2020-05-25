@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """Install rcli and rcli distutils extensions."""
 
-from __future__ import unicode_literals
-
 import os.path
 import shutil
 

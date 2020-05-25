@@ -6,9 +6,6 @@ Functions:
     get_terminal_size: Get the size of the terminal.
 """
 
-from __future__ import absolute_import
-
-
 try:
     from shutil import get_terminal_size
 except ImportError:

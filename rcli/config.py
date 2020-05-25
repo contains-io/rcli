@@ -9,9 +9,6 @@ Classes:
     RcliEntryPoint: The allowed entry point types for subcommands.
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 import copy
 import logging
 import json
@@ -24,7 +21,6 @@ import typing
 from typet import Singleton
 import pkg_resources
 import setuptools  # noqa: F401 pylint: disable=unused-import
-import six
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -32,7 +28,7 @@ _LOGGER = logging.getLogger(__name__)
 RcliEntryPoint = typing.Union[types.FunctionType, type, types.ModuleType]
 
 
-class _RcliConfig:
+class _RcliConfig(metaclass=Singleton):
     """A global settings object for the command and the configuration."""
 
     _EP_MOD_NAME = "rcli.dispatcher"  # The console script entry point module.

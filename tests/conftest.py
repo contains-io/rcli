@@ -8,8 +8,6 @@ Functions:
     id_: A unique 24 character ID that can be used in a test.
 """
 
-from __future__ import unicode_literals
-
 import contextlib
 import inspect
 import os
@@ -23,7 +21,7 @@ import textwrap
 import pytest
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def create_project(tmpdir):
     """Function factory to create context managers that create python projects.
 
@@ -34,6 +32,7 @@ def create_project(tmpdir):
         A factory function that will create the folder structure, setup.py and
         the initial package code for a command program.
     """
+
     @contextlib.contextmanager
     def _install_project(code, setupcfg=None):
         """Create a new Python project using rcli.
@@ -51,11 +50,11 @@ def create_project(tmpdir):
             A py.path.local object representing the newly created project
             folder.
         """
-        project_name = id_()
+        project_name = id__()
         project = tmpdir.mkdir(project_name)
         if setupcfg:
-            project.join('setup.cfg').write(inspect.cleandoc(setupcfg))
-        setup = project.join('setup.py')
+            project.join("setup.cfg").write(inspect.cleandoc(setupcfg))
+        setup = project.join("setup.py")
         setup.write(
             textwrap.dedent(
                 """
@@ -69,23 +68,27 @@ def create_project(tmpdir):
                     setup_requires=['rcli'],
                     autodetect_commands=True
                 )
-                """.format(name=project_name)
+                """.format(
+                    name=project_name
+                )
             )
         )
-        project.mkdir(project_name).join('__init__.py').write(textwrap.dedent(
-            code))
+        project.mkdir(project_name).join("__init__.py").write(
+            textwrap.dedent(code)
+        )
         prevdir = os.getcwd()
         os.chdir(os.path.expanduser(str(project)))
-        subprocess.check_call(['pip', 'install', '.'])
+        subprocess.check_call(["pip", "install", "."])
         try:
             yield project
         finally:
-            subprocess.call(['pip', 'uninstall', project_name, '-y'])
+            subprocess.call(["pip", "uninstall", project_name, "-y"])
             os.chdir(prevdir)
+
     return _install_project
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def run():
     """Function factory to create subprocess wrapper functions.
 
@@ -93,6 +96,7 @@ def run():
         A function that wraps subprocess.check_output, splits the input
         command, and decodes the output using the system encoding.
     """
+
     def _inner(command, stderr=False):
         """Run the given command and decode the output.
 
@@ -107,15 +111,22 @@ def run():
         try:
             output = subprocess.check_output(
                 shlex.split(command),
-                stderr=subprocess.STDOUT if stderr else None)
+                stderr=subprocess.STDOUT if stderr else None,
+            )
         except subprocess.CalledProcessError as e:
             output = e.output
         return output.decode(sys.stdout.encoding)
+
     return _inner
 
 
-@pytest.fixture(scope='function')
+def id__():
+    return "".join(
+        random.choice(string.ascii_letters + string.digits) for _ in range(24)
+    )
+
+
+@pytest.fixture(scope="function")
 def id_():
     """Return a 24 character ID consisting of letters and digits."""
-    chars = string.ascii_letters + string.digits
-    return ''.join(random.choice(chars) for _ in range(24))
+    return id__()

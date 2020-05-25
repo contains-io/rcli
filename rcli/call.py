@@ -7,9 +7,6 @@ Functions:
     get_callable: Retrieves a callable object from a subcommand.
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 from types import (  # noqa: F401 pylint: disable=unused-import
     FunctionType,
     MethodType,
